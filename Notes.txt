@@ -1,0 +1,102 @@
+ETCD is a distributed reliable key-value store that is simple, secure& fast
+by default listen on port 2379
+./etcdctl set key1 value1           # etcd command lines used to store and retrieve keys and values, it's version 2 command
+./etcdctl --version
+ETCDCTL_API=3 ./etcdctl version     # to make api version 3.3 rather than 2
+./etcdctl put key1 value1           # to put value of key1
+./etcdctl get key1                  # to get value of key1
+---
+#you must specify the ETCDCTL API version and path to certificate files
+kubectl exec etcd-controlplane -n kube-system -- sh -c "ETCDCTL_API=3 etcdctl get / --prefix --keys-only --limit=10 --cacert /etc/kubernetes/pki/etcd/ca.crt --cert /etc/kubernetes/pki/etcd/server.crt --key /etc/kubernetes/pki/etcd/server.key"
+---
+shceduler decide which pod go to which node but the kubelet creates the pods 
+kubeadm doesn't automatically install the kubelet but you must always manually install the kubelet on your worker nodes. download the installer, extract and and run it as a service
+Kube-Proxy is a network proxy that runs on each node in a Kubernetes cluster. It is responsible for maintaining network connectivity between services and pods. 
+Kube-Proxy does this by translating service definitions into actionable networking rules.
+
+kubectl run nginx --image nginx
+kubectl get pods                    # to get running pods 
+#pods with YAML
+file name is pod-definition.yml
+---
+apiVersion: v1
+kind: Pod                           # could be replicaset, deployment, service 
+metadata:                           # data about the object
+  name: myapp-pod
+  labels:
+      app: myapp                    # everything under metadata is written as dictionary not string 
+      type: front-end               # you can name it tier not type
+spec:
+  containers:                       # is a list or arrary because we could have multible containers within them
+    - name: nginx-containers
+      image: nginx 
+#   - name: busybox
+#     image: busybox
+---
+kubectl create -f pod-definition.yml #to create the pod 
+kubectl get pods
+kubectl describe pod myapp-pod      #to get all info and details about your pod 
+kubectl create -f pod-definition.yml = kubectl apply -f pod-definition.yml
+kubectl delete pod <podName>
+kubectl apply -f pod-definition.yml 
+kubectl get pods -o wide            # to get wide view for get pods 
+kubectl run redis --image=redis123 --dry-run=client -o yaml        # to make it wihout creating the yaml file 
+----------------
+---ReplicationController---
+---
+apiVersion: v1
+kind: ReplicationController        
+metadata:                           #for application controller                 
+  name: myapp-rc
+  labels:
+      app: myapp                    
+      type: front-end               
+spec:
+  template:
+    metadata:                        #for pods 
+      name: myapp-pod
+      labels:
+          app: myapp                    
+          type: front-end               
+    spec:
+      containers:                       
+        - name: nginx-containers
+          image: nginx 
+
+  replicas: 2
+---
+kubectl create -f rc-definition.yml   #replication controller created 
+kubectl get ReplicationController     #to get desired, current, ready, and age of RC created
+---------------------------------------------------------------------------------------------
+---ReplicaSet---
+---
+apiVersion: app/v1
+kind: ReplicaSet        
+metadata:                           #for replicaset                
+  name: myapp-replicaset
+  labels:
+      app: myapp                    
+      type: front-end               
+spec:
+  template:
+    metadata:                        #for pods 
+      name: myapp-pod
+      labels:
+          app: myapp                    
+          type: front-end               
+    spec:
+      containers:                       
+        - name: nginx-containers
+          image: nginx 
+
+  replicas: 
+  selector:                          # determine how many pods are under control of replicaset and this is performed with the matchlabel 
+    matchLabels:
+      type: front-end 
+---
+kubectl create -f replicaset-definition.yml 
+kubectl get replicaset
+#replicaset monitor the pods so if there's a pod that fails, it will run a new one
+kubectl replace -f replicaset-definition.yml                #after updating the replicas in the file at anytime, run this command to apply 
+kubectl scale --replicas=6 -f replicaset-definition.yml     #rather that updating in file to update replicas number 
+kubectl scale --replicas=6 -f replicaset-definition.yml = kubectl scale --replicas=6 replicaset myapp-replicaset
