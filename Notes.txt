@@ -136,3 +136,28 @@ kubectl get deployments
 #the deployment automatically create a replicaset 
 kubectl get all                                           # to see all created objects
 --------------------------------------------------------------------------------------
+---Service---
+---
+apiVersion: v1
+kind: Service        
+metadata:                                     
+  name: myapp-service 
+  labels:
+      app: myapp                    
+      type: front-end               
+spec:
+  type: NodePort                                #default type is ClusterIP
+  ports:
+   - targetPort: 80
+     port: 80                                   #if you don't provide port,it's by default 80
+     nodePort: 30008                            #if you don't provide nodePort,it's by default from 30000 to 32767
+  selector:                                     #pull the labels from the pod definition file and put them under selector
+     app: myapp
+     type: front-end  
+---
+kubectl create -f service-definition.yml 
+kubectl get services
+#to set type to LoadBalancer, you need to integrate to a LoadBalancer service like ELB services from the cloud providers 
+#Namespaces provide a scope for names. Names of resources need to be unique within a namespace, but not across namespaces. 
+#Namespaces cannot be nested inside one another and each Kubernetes resource can only be in one namespace.
+#Namespaces are a way to divide cluster resources between multiple users (via resource quota).
