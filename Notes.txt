@@ -70,7 +70,7 @@ kubectl get ReplicationController     #to get desired, current, ready, and age o
 ---------------------------------------------------------------------------------------------
 ---ReplicaSet---
 ---
-apiVersion: app/v1
+apiVersion: apps/v1
 kind: ReplicaSet        
 metadata:                           #for replicaset                
   name: myapp-replicaset
@@ -93,10 +93,46 @@ spec:
   selector:                          # determine how many pods are under control of replicaset and this is performed with the matchlabel 
     matchLabels:
       type: front-end 
----
+------------------------------------------------------------------------
 kubectl create -f replicaset-definition.yml 
 kubectl get replicaset
 #replicaset monitor the pods so if there's a pod that fails, it will run a new one
 kubectl replace -f replicaset-definition.yml                #after updating the replicas in the file at anytime, run this command to apply 
 kubectl scale --replicas=6 -f replicaset-definition.yml     #rather that updating in file to update replicas number 
 kubectl scale --replicas=6 -f replicaset-definition.yml = kubectl scale --replicas=6 replicaset myapp-replicaset
+kubectl delete replicaset myapp-replicaset
+kubectl explain replicaset                                  #to see version and kind 
+kubectl get rs 
+kubectl edit rs <replicasetname>                            #navigate to the replica manifest file 
+-------------------------------------------------------------------------------
+---deployment---
+---
+apiVersion: apps/v1
+kind: Deployment        
+metadata:                                     
+  name: myapp-deployment
+  labels:
+      app: myapp                    
+      type: front-end               
+spec:
+  template:
+    metadata:                        
+      name: myapp-pod
+      labels:
+          app: myapp                    
+          type: front-end               
+    spec:
+      containers:                       
+        - name: nginx-container
+          image: nginx 
+
+  replicas: 3
+  selector:              
+    matchLabels:
+      type: front-end 
+---
+kubectl create -f deployment-definition.yml 
+kubectl get deployments
+#the deployment automatically create a replicaset 
+kubectl get all                                           # to see all created objects
+--------------------------------------------------------------------------------------
