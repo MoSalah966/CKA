@@ -161,3 +161,69 @@ kubectl get services
 #Namespaces provide a scope for names. Names of resources need to be unique within a namespace, but not across namespaces. 
 #Namespaces cannot be nested inside one another and each Kubernetes resource can only be in one namespace.
 #Namespaces are a way to divide cluster resources between multiple users (via resource quota).
+
+mysql.connect("db-service")                         # to connect to a database in the same namespace
+mysql.connect("db-service.dev.svc.cluster.local")   #to connect to a database in another namespace(servicename.namespace.svc.cluster.local)format
+#cluster.local is the default domain name of the k8s cluster and svc is the subdomain (service )
+
+kubectl get pods --namespace=<namespaceName>        #to get pods in a specific namespace and not the default one
+kubectl create -f pod-definition.yml --namespace=dev
+---------------------
+---NameSpace---
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+    name: dev
+---
+kubectl create -f namespace-dev.yml
+kubectl create namespace dev
+kubectl config set-context $(kubectl config current-context) --namespace=dev      #to move permanently to this namespace 
+kubectl get pods --all-namespaces
+kubectl get pods -n=finance
+kubectl run redis --image=redis -n=finance  #run pod named redis with image and namespace 
+----------------------------------
+#to limit resources of cluster within a namespace define a quota
+---
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+    name: compute-quota
+    namespace: dev 
+spec:
+  hard:
+    pods: "10"
+    requests.cpu: "4"
+    requests.memory: 5Gi
+    limits.cpu: "10"
+    limits.memory: 10Gi
+---
+kubectl get pods --all-namespaces = kubectl get pods -A 
+kubectl get svc -n=<namespaceName>                        #get services in specific namespace
+kubectl set image deployment nginx nginx=nginx:1.18 
+kubectl expose deployment nginx --port 80
+#--dry-run: By default as soon as the command is run, the resource will be created. If you simply want to test your command , use the --dry-run=client option. 
+#This will not create the resource, instead, tell you whether the resource can be created and if your command is right.
+#-o yaml: This will output the resource definition in YAML format on screen.
+
+
+#Create a Service named redis-service of type ClusterIP to expose pod redis on port 6379 (This will automatically use the pod’s labels as selectors)
+kubectl expose pod redis --port=6379 --name redis-service --dry-run=client -o yaml
+
+kubectl create service clusterip httpd --tcp=80:80
+-----------------------------------------------------------------------------
+#without a scheduler, the easiest way to shcedule a pod is to simply set the nodeName field to the name of the node in the pod spec file "parallel to containers:"
+#if you want to add an existing pod to a node, create a binding object and send a post request to the pod binding API thus mimicking what 
+the actual scheduler does. 
+---
+apiVersion: v1
+kind: Binding
+metadata:
+  name: nginx
+target:
+  apiVersion: v1
+  kind: node
+  name: <nameoftargetnode>
+  ---
+  curl --header "content-type:application/json" --request POST --data '{"apiVersion":"v1", "kind": "Binding"...}
+  
