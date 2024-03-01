@@ -229,3 +229,16 @@ target:
 kubectl get pods -n kube-system                           #show the k8s system pods like etcd, scheduler..
 kubectl replace --force -f nginx.yaml                     #rather that delete and create the pod again
 kubectl get pods --watch 
+kubectl get pods --selector <labelname>=<labelvalue>      #to select a pod with a label 
+#You can use Kubernetes annotations to attach arbitrary non-identifying metadata to objects. Clients such as tools and libraries can retrieve this metadata.
+#annotations are not used to identify and select objects. 
+#The metadata in an annotation can be small or large, structured or unstructured, and can include characters not permitted by labels. 
+#It is possible to use labels as well as annotations in the metadata of the same object.
+///
+"metadata": {
+  "annotations": {
+    "key1" : "value1",
+    "key2" : "value2"
+  }
+}
+///
