@@ -213,7 +213,7 @@ kubectl expose pod redis --port=6379 --name redis-service --dry-run=client -o ya
 kubectl create service clusterip httpd --tcp=80:80
 -----------------------------------------------------------------------------
 #without a scheduler, the easiest way to shcedule a pod is to simply set the nodeName field to the name of the node in the pod spec file "parallel to containers:"
-#if you want to add an existing pod to a node, create a binding object and send a post request to the pod binding API thus mimicking what 
+#if you want to add an existing pod to a node, create a binding object and send a post request to the pod binding API thus mimicking what the actual scheduler does 
 the actual scheduler does. 
 ---
 apiVersion: v1
@@ -225,5 +225,7 @@ target:
   kind: node
   name: <nameoftargetnode>
   ---
-  curl --header "content-type:application/json" --request POST --data '{"apiVersion":"v1", "kind": "Binding"...}
-  
+curl --header "content-type:application/json" --request POST --data '{"apiVersion":"v1", "kind": "Binding"...}
+kubectl get pods -n kube-system                           #show the k8s system pods like etcd, scheduler..
+kubectl replace --force -f nginx.yaml                     #rather that delete and create the pod again
+kubectl get pods --watch 
