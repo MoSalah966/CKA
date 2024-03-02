@@ -242,3 +242,10 @@ kubectl get pods --selector <labelname>=<labelvalue>      #to select a pod with 
   }
 }
 ///
+kubectl get all --selector env=prod,bu=finance,tier=frontend        #give a pod shared with all these selectors 
+kubectl get pods --selector env=dev --no-headers | wc -l            #get number of pods with label env dev 
+--------------------------------------
+---Taints and Tolerations---
+kubectl taint nodes <nodename> key=value:taint-effect               #to taint a node
+#there are three main effects: NoSchedule PreferNoSchedule NoExecute
+#https://www.hackertouch.com/what-is-the-difference-between-noexecute-noschedule-prefernoschedule.html  #to explain difference
