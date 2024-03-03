@@ -254,15 +254,21 @@ kubectl taint nodes <nodename> key=value:taint-effect               #to taint a 
 apiVersion: v1
 kind: Pod
 metadata:
-  name= podName
+  name: podName
 spec:
   containers:
   - name: nginx-container
     image: nginx
   tolerations:
   - key: "app"
-    operator: "equal"
+    operator: "Equal"
     value: "blue"
     effect: "NoSchedule"
 ---
 kubectl taint nodes node1 
+#if you want to restict the pods to certain nodes, that is another concept called node affinity 
+#when k8s cluster initiated, a taint already put on the worker node not to get pods through scheduler
+#to see this taint
+kubectl describe node kubemaster | grep taint
+kubectl describe nodes node01 | grep -i taints
+kubectl taint nodes controlplane node-role.kubernetes.io/control-plane:NoSchedule-    #untint the node 
