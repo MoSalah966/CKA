@@ -249,3 +249,20 @@ kubectl get pods --selector env=dev --no-headers | wc -l            #get number 
 kubectl taint nodes <nodename> key=value:taint-effect               #to taint a node
 #there are three main effects: NoSchedule PreferNoSchedule NoExecute
 #https://www.hackertouch.com/what-is-the-difference-between-noexecute-noschedule-prefernoschedule.html  #to explain difference
+#to add toleration to a pod
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name= podName
+spec:
+  containers:
+  - name: nginx-container
+    image: nginx
+  tolerations:
+  - key: "app"
+    operator: "equal"
+    value: "blue"
+    effect: "NoSchedule"
+---
+kubectl taint nodes node1 
