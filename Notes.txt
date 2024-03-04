@@ -309,3 +309,19 @@ spec:
           values:
           - Large
 -----------------
+# you can make the labels like 
+          - Large
+          - Medium
+# to make sure it could be in a node with this label or this label
+# we can put the operator to "NotIn" and that's means this pod will not be at the node with the key value labels 
+#another label "Exists" check if the label exists on the nodes 
+-------------------------------------
+---Node Affinity Types---
+availabel:                                                #any change in node affinity after running will not affect the pod
+requiredDuringSchedulingIgnoredDuringExecution            #if the matching pod does not exist, the pod will not be scheduled 
+preferredDuringSchedulingIgnoredDuringExecution           #if the matching pod does not exist, the scheduler will simply ignore node affinity rules
+
+planned:                                                  #during execution means a change while the pod is running and this change affect node affinity
+requiredDuringSchedulingRequiredDuringExecution           #required to affect the node after the running phase is exist 
+preferredDuringSchedulingRequiredDuringExecution
+-------------------------------------------
