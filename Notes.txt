@@ -271,4 +271,41 @@ kubectl taint nodes node1
 #to see this taint
 kubectl describe node kubemaster | grep taint
 kubectl describe nodes node01 | grep -i taints
-kubectl taint nodes controlplane node-role.kubernetes.io/control-plane:NoSchedule-    #untint the node 
+kubectl taint nodes controlplane node-role.kubernetes.io/control-plane:NoSchedule-    #untint the node with the tint value (node-role.kubernetes.io/control-plane:NoSchedule)
+kubectl run podname -image=imagename --dry-run=client -o yaml > file.yaml             #create a pod content in file.yaml with dry run (without creating it)
+-----------------------------------------------------------------------------------
+apiVersion: v1
+kind: Pod
+metadata:
+  name: myapp-pod
+spec:
+  containers:
+  - name: data-processing
+    image: data-processor
+  nodeSelector:
+    size: large                                           #this will be a label on the node that we want to select
+----------------
+#to label a node
+kubectl label node <nodename> <label-key>=<label-value>
+------
+---node affinity---
+#the purpose of it is to ensure that the pod will select a particular node
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: myapp-pod
+spec:
+  containers:
+  - name: data-processing
+    image: data-processor
+  affinity:
+   nodeAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: size
+          operator: In                                # the In operator make sure that this pod will be in the node with the key and value label
+          values:
+          - Large
+-----------------
