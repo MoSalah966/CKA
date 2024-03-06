@@ -354,3 +354,53 @@ spec:
 -----------------------------
 #the scheduler will looks at a node that has that amount of resources
 #if a pod does not have a request field and other pods consume all resources, this pod could starve of lacking of resources
+#we cannot throttle memory like CPU, so the only way to retrieve memory from a pod is to kill the pod to free up some memory
+-----------------------------
+---limit range---
+#limit-range-cpu.yaml
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: cpu-resource-constraint
+spec:
+  limits:
+  - default:                          #limit
+      cpu: 500m
+    defaultRequest:                   #request 
+      cpu: 500m
+    max:                              #limit
+      cpu: "1"
+    min:                              #request 
+      cpu: 100m
+    type: container 
+-----------------------------
+#limit-range-memory.yaml
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: memory-resource-constraint
+spec:
+  limits:
+  - default:                          #limit
+      memory: 1Gi 
+    defaultRequest:                   #request 
+      memory: 1Gi 
+    max:                              #limit
+      memory: 1Gi
+    min:                              #request 
+      memory: 500Mi
+    type: container 
+-----------------------------
+---resource quotas---
+#resource-quota.yaml
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name:my-resource-quota
+spec:
+  hard:
+    requests.cpu: 4
+    requests.memory: 4Gi
+    limits.cpu: 10
+    limits.memory: 10Gi
+---
