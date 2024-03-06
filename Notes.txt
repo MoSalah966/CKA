@@ -437,3 +437,30 @@ kubectl get daemonsets --all-namespaces = kubectl get daemonsets -A
 #as mentioned before, in pod file, set the nodeName property to determine the exact node that the pod will be in (until version 1.12)
 #from v1.12 - use nodeAffinity and default scheduler
 kubectl describe daemonset <daemonsetName> --namespace=<namespaceName> 
+#imperative example:
+kubectl create deployment <deploymentname> -n <namespaceName> --image=<imagename> --dryrun=client -o yaml > file.yaml 
+----------------------------------
+#Static Pods are managed directly by the kubelet daemon on a specific node, without the API server observing them. 
+#Unlike Pods that are managed by the control plane (for example, a Deployment); instead, the kubelet watches each static Pod (and restarts it if it fails).
+#Static Pods are always bound to one Kubelet on a specific node.
+---
+# Choose a directory, say /etc/kubernetes/manifests and place a web server Pod definition there, for example /etc/kubernetes/manifests/static-web.yaml:
+# Run this command on the node where kubelet is running
+mkdir -p /etc/kubernetes/manifests/
+cat <<EOF >/etc/kubernetes/manifests/static-web.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: static-web
+  labels:
+    role: myrole
+spec:
+  containers:
+    - name: web
+      image: nginx
+      ports:
+        - name: web
+          containerPort: 80
+          protocol: TCP
+EOF
+---
