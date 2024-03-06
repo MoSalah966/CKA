@@ -413,7 +413,10 @@ spec:
 apiVersion: apps/v1
 kind: daemonSet
 metadata:
-  name: monitoring-daemon
+  labels:
+    app: elasticsearch
+  name: elasticsearch
+  namespace: kube-system
 spec:
   selector:
     matchLabels:
@@ -430,30 +433,7 @@ spec:
 kubectl create -f daemon-set-definition.yaml
 kubectl get daemonsets 
 kubectl describe daemonsets <daemonsetname>
-kubectl get daemonsets --all-namespaces
+kubectl get daemonsets --all-namespaces = kubectl get daemonsets -A 
 #as mentioned before, in pod file, set the nodeName property to determine the exact node that the pod will be in (until version 1.12)
 #from v1.12 - use nodeAffinity and default scheduler
-kubectl describe daemonset <daemonsetName> --namespace=<namespaceName>
-#another example of daemonset file
----
----
-apiVersion: apps/v1
-kind: DaemonSet
-metadata:
-  labels:
-    app: elasticsearch
-  name: elasticsearch
-  namespace: kube-system
-spec:
-  selector:
-    matchLabels:
-      app: elasticsearch
-  template:
-    metadata:
-      labels:
-        app: elasticsearch
-    spec:
-      containers:
-      - image: registry.k8s.io/fluentd-elasticsearch:1.20
-        name: fluentd-elasticsearch
----
+kubectl describe daemonset <daemonsetName> --namespace=<namespaceName> 
