@@ -404,3 +404,56 @@ spec:
     limits.cpu: 10
     limits.memory: 10Gi
 ---
+#A DaemonSet ensures that all (or some) Nodes run a copy of a Pod.
+#As nodes are added to the cluster, Pods are added to them. As nodes are removed from the cluster, 
+#those Pods are garbage collected. Deleting a DaemonSet will clean up the Pods it created.
+---daemonSet Definition---
+#daemon-set-definition.yaml > same as replicaset file
+---
+apiVersion: apps/v1
+kind: daemonSet
+metadata:
+  name: monitoring-daemon
+spec:
+  selector:
+    matchLabels:
+      app: monitoring-agent
+  template:
+    metadata:
+      labels:
+        app: monitoring-agent
+    spec:
+      containers:
+      - name: monitoring-agent
+        image: monitoring-agent
+------------------------------
+kubectl create -f daemon-set-definition.yaml
+kubectl get daemonsets 
+kubectl describe daemonsets <daemonsetname>
+kubectl get daemonsets --all-namespaces
+#as mentioned before, in pod file, set the nodeName property to determine the exact node that the pod will be in (until version 1.12)
+#from v1.12 - use nodeAffinity and default scheduler
+kubectl describe daemonset <daemonsetName> --namespace=<namespaceName>
+#another example of daemonset file
+---
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  labels:
+    app: elasticsearch
+  name: elasticsearch
+  namespace: kube-system
+spec:
+  selector:
+    matchLabels:
+      app: elasticsearch
+  template:
+    metadata:
+      labels:
+        app: elasticsearch
+    spec:
+      containers:
+      - image: registry.k8s.io/fluentd-elasticsearch:1.20
+        name: fluentd-elasticsearch
+---
