@@ -330,3 +330,27 @@ preferredDuringSchedulingRequiredDuringExecution
 #after we use taints and tolerations to prevent other pods from being placed on our nodes
 #we use affinity to prevent our pods from being placed on their nodes
 #https://medium.com/saas-infra/taints-and-tolerations-node-affinity-and-node-selector-explained-f329653c2bc6#id_token=eyJhbGciOiJSUzI1NiIsImtpZCI6IjZmOTc3N2E2ODU5MDc3OThlZjc5NDA2MmMwMGI2NWQ2NmMyNDBiMWIiLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLCJhenAiOiIyMTYyOTYwMzU4MzQtazFrNnFlMDYwczJ0cDJhMmphbTRsamRjbXMwMHN0dGcuYXBwcy5nb29nbGV1c2VyY29udGVudC5jb20iLCJhdWQiOiIyMTYyOTYwMzU4MzQtazFrNnFlMDYwczJ0cDJhMmphbTRsamRjbXMwMHN0dGcuYXBwcy5nb29nbGV1c2VyY29udGVudC5jb20iLCJzdWIiOiIxMDAxNzA5OTMxMTAwMjM3MTkxODciLCJlbWFpbCI6Im1vbW9tczIwMTBAZ21haWwuY29tIiwiZW1haWxfdmVyaWZpZWQiOnRydWUsIm5iZiI6MTcwOTYyMzcyMSwibmFtZSI6Ik1vaGFtZWQgU2FsYWgiLCJwaWN0dXJlIjoiaHR0cHM6Ly9saDMuZ29vZ2xldXNlcmNvbnRlbnQuY29tL2EvQUNnOG9jSUxuSVl5YU9NSnktaXE3OTZlY1pWQVNIMWpLTXEwX1dIdktmeTNJZjRnVlJJPXM5Ni1jIiwiZ2l2ZW5fbmFtZSI6Ik1vaGFtZWQiLCJmYW1pbHlfbmFtZSI6IlNhbGFoIiwibG9jYWxlIjoiZW4iLCJpYXQiOjE3MDk2MjQwMjEsImV4cCI6MTcwOTYyNzYyMSwianRpIjoiMWMyMjc1ODM4MDIzYTZlYThmNGE5NWE5N2I3N2Y4NzdjODgwYzk4NCJ9.Ji4NWJZuHipep3pPQC-3KoAIUoNosTTvgF5sYxw8raqYj84XAhBSxLLPXH9uNplCQlRZG1U_XAvtc6rrKKEitKA0ZNKbD8IyvidUWfLRQvISkfme1qnvvNdsmRxQ4N1PEPowh8VcqIu1Cy-4VLCCIo_q14x9ZskwvFyNX4bVotcTGhZ-KeqERqRavXegWxP_lvmqjDdcD4HCLz04nY0Kp7DQ9DXwmoMjoYcdSgUocuvBS1IM9GPfvXM-Jwdfe5KRvp_ojwspfS47WY-DdPIVxKOQSbfy5uB-IGEbl-m2BvITT_0o33ZoMTzOewUIv6EDnKqO-cUkRauhycYLo3eUQg
+--------------------------------------------
+---resource requests---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: webapp
+  labels:
+    name:webapp
+spec:
+  containers:
+  - name: webapp
+    image: nginx
+    ports:
+      - containerport:8080
+    resources:                                        # you can specify/request minimum resources for your pod here 
+      requests:
+        memory: "4Gi"
+        cpu: 2
+      limits:                                         #you can specify the limits of your resources here 
+        memory: "6Gi"
+        cpu: 4
+-----------------------------
+#the scheduler will looks at a node that has that amount of resources
+#if a pod does not have a request field and other pods consume all resources, this pod could starve of lacking of resources
