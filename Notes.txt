@@ -464,3 +464,34 @@ spec:
           protocol: TCP
 EOF
 ---
+#if you want to get static pods in all name spaces 
+#Run the command kubectl get pods --all-namespaces and look for those with -controlplane appended in the name
+#to get which nodes are the static pods created:
+#kubectl get pods -A -o wide
+#how to know the path for the static pod 
+ps -aux | grep kubelet #identify the config file > --config=/var/lib/kubelet/config.yaml
+ps -aux | grep /usr/bin/kubelet
+grep -i staticpod /var/lib/kubelet/config.yaml
+-------
+#creating static pod
+kubectl run --restart=Never --image=busybox static-busybox --dry-run=client -o yaml --command -- sleep 1000 > /etc/kubernetes/manifests/static-busybox.yaml
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  creationTimestamp: null
+  labels:
+    run: static-busybox
+  name: static-busybox
+spec:
+  containers:
+  - command:
+    - sleep
+    - "1000"
+    image: busybox
+    name: static-busybox
+    resources: {}
+  dnsPolicy: ClusterFirst
+  restartPolicy: Never
+status: {}
+---
