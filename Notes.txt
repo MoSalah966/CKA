@@ -546,3 +546,21 @@ spec:
 kubectl create -f pod.yaml 
 kubectl get events -o wide                                      #to know which scheduler schedule which pod
 kubectl logs my-custom-scheduler --name-space=kube-system       #to get logs
+#you can determine priority of the pod 
+spec:
+  priorityClassName: high-priority                              #it will be shceduled first
+---
+---configure scheduler profiles---
+apiVersion: kubescheduler.config.k8s.io/v1
+kind: KubeSchedulerConfiguration
+profiles:
+- schedulerName: <name>
+  plugins:
+    score:
+      disabled:
+       - name: TaintToleration
+      enabled:
+       - name: MyCustomPluginA
+       - name: MyCustomPluginB
+--------------------------------------
+--------------------------------------
