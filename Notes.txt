@@ -495,3 +495,52 @@ spec:
   restartPolicy: Never
 status: {}
 ---
+---multiple schedulers---
+#to create another scheduler, you have to give it a file with another name than the default-scheduler name 
+---
+apiVersion: kubescheduler.config.k8s.io/v1
+kind: KubeSchedulerConfiguration
+profiles:
+- schedulerName: <name>
+---
+#another way to deploy another scheduler as a pod
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: my-custom-scheduler
+  namespace: kube-system
+spec:
+  containers:
+  - command:
+    - kube-scheduler
+    - --address=127.0.0.1
+    - --kubeconfig=/etc/kubernetes/scheduler.conf
+    - --config=/etc/kubernetes/my-scheduler-config.yaml
+
+    image: k8s.gcr.io/kube-scheduler-amd64:v1.11.3
+    name: kubescheduler
+---
+we have to add leaderelection if we have HA and more than one master node, and want to set an active node from a specific shceduler
+---
+apiVersion: kubescheduler.config.k8s.io/v1
+kind: KubeSchedulerConfiguration
+profiles:
+- schedulerName: <name>
+leaderElection:
+  leaderElect: true                             #if exist,only the leader instance will actively schedule pods. If the leader instance fails, another instance will be elected as the new leader to continue scheduling pods.
+  resourceNamespace: kube-system
+  resourceName: lock-object-my-scheduler
+---
+#to deploy an additional scheduler
+#https://kubernetes.io/docs/tasks/extend-kubernetes/configure-multiple-schedulers/
+
+kubectl get pods --namespace=kube-system  #to see system pods like schedulers that you have 
+#to use the new scheduler, while creating the pod specify the scheduler name 
+spec:
+  containers:
+  - image: nginx
+    name: nginx
+  schedulerName: my-custom-scheduler
+---
+kubectl create -f pod.yaml 
