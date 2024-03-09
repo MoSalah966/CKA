@@ -544,3 +544,5 @@ spec:
   schedulerName: my-custom-scheduler
 ---
 kubectl create -f pod.yaml 
+kubectl get events -o wide                                      #to know which scheduler schedule which pod
+kubectl logs my-custom-scheduler --name-space=kube-system       #to get logs
