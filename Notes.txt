@@ -564,3 +564,12 @@ profiles:
        - name: MyCustomPluginB
 --------------------------------------
 --------------------------------------
+---monitoring and logging---
+#to enable metric-server in minikube cluster 
+minikube addons enable metrics-server
+#for other environments
+git clone https://github.com/kubernetes-sigs/metrics-server.git
+kubectl create -f deploy/1.8+/                                    #deploy pods to enable metrics server to poll for perfomance metrics from the nodes in cluster 
+
+kubectl top node                                                  #cpu and memory consumption for nodes 
+kubectl top pod 
