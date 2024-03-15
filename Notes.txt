@@ -573,3 +573,15 @@ kubectl create -f deploy/1.8+/                                    #deploy pods t
 
 kubectl top node                                                  #cpu and memory consumption for nodes 
 kubectl top pod 
+-------
+---application logs---
+kubectl logs -f <podname>
+kubectl logs -f <podname> <containername>                         #to get a specific container's log inside the pod 
+----------------------------------------
+kubectl rollout status deployment/<nameofdeployment>              #to see the status of the rollout
+kubectl rollout history deployment/<nameofdeployment>             #show the revisions and history of the rollout
+#rolling update is the default deployment strategy
+#just run the kubectl apply deployment command and the upgrade will take place 
+#but you can use kubectl set image command to update the image of your app 
+kubectl rollout undo deployment                                   #to undo the rollout of the deployment
+
