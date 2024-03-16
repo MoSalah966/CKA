@@ -651,3 +651,41 @@ APP_MODE: prod
 kubectl create -f ...       #declarative way 
 kubectl create configmap <config-name> --from-literal=<key>=<value>   #imperative way 
 #example kubectl create configmap \ app-config --from-literal=APP_COLOR=blue \ --from-literal=APP_MOD=prod 
+#another way
+kubectl create configmap <configname> --from-file=<path-to-file>
+kubectl ceate configmap \ app-config --from-file=app.config.properties
+
+#declarative
+config-map.yaml
+apiVersion: v1
+kind: configMap
+metadata:
+  name: app-config 
+data:
+  APP_COLOR:blue
+  APP_MOD:prod
+---
+kubectl get configmaps  #also describe command 
+#how to link it with pod 
+---
+spec:
+  envFrom:
+    - configMapRef:
+          name: app-config
+---
+spec:
+  valueFrom
+    configMapKeyRef:
+      name: app-config
+      key: APP_COLOR         #another way 
+---
+kubectl create configmap  webapp-config-map --from-literal=APP_COLOR=darkblue --from-literal=APP_OTHER=disregard
+#from label
+---
+  - env:
+    - name: APP_COLOR
+      valueFrom:
+       configMapKeyRef:
+         name: webapp-config-map
+         key: APP_COLOR
+---
