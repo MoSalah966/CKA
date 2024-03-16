@@ -643,3 +643,12 @@ env:
     valueFrom:
         secretKeyRef:                  #secret way 
 ---
+---configmap--
+#configmapfile
+APP_COLOR: blue
+APP_MODE: prod
+---
+kubectl create -f ...       #declarative way 
+kubectl create configmap <config-name> --from-literal=<key>=<value>   #imperative way 
+#example kubectl create configmap \ app-config --from-literal=APP_COLOR=blue \ --from-literal=APP_MOD=prod 
+
