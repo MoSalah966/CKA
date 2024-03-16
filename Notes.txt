@@ -583,5 +583,45 @@ kubectl rollout history deployment/<nameofdeployment>             #show the revi
 #rolling update is the default deployment strategy
 #just run the kubectl apply deployment command and the upgrade will take place 
 #but you can use kubectl set image command to update the image of your app 
-kubectl rollout undo deployment                                   #to undo the rollout of the deployment
-
+kubectl rollout undo deployment/<deploymentname                   #to undo the rollout of the deployment (rollback)
+---
+spec:
+  minReadySeconds: 20
+  progressDeadlineSeconds: 600
+  replicas: 4
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      name: webapp
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        name: webapp
+---
+  strategy:
+    type: Recreate
+----
+---create a pod from docker image with sleep command---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: ubuntu-sleep-pod
+spec:
+  containers:
+    - name: ubuntu-sleeper
+      image: ubuntu-sleeper
+      args: ["10"]                                          # it's like entrypoint: sleep CMD: 10 and like in linux sleep 10 command 
+---
+#the args section override the CMD part in the docker file 
+#if you want to override the entrypoint field from the pod file 
+containers:
+  - name: 
+    command: ["sleep 2.0"]   #to override the entrypoint field 
+    args: ["10"]
+----
