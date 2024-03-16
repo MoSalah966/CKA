@@ -625,3 +625,21 @@ containers:
     command: ["sleep 2.0"]   #to override the entrypoint field 
     args: ["10"]
 ----
+---environment variable---
+docker run -e APP_COLOR=pink simple-webapp-color
+#equal in k8s
+spec:
+  env:
+    - name: APP_COLOR
+      value: pink                       #this way named plain key value 
+---
+env:
+  - name: APP_COLOR
+    valueFrom: 
+        configMapKeyRef:                #config map way
+---
+env:
+  - name: APP_COLOR
+    valueFrom:
+        secretKeyRef:                  #secret way 
+---
