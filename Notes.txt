@@ -717,3 +717,19 @@ spec:
     - secretRef:
           name: app-secret
 ---
+#another way
+env:
+  - name: DB_Password
+    valueFrom:
+      secretKeyRef:
+        name: app-secret
+        key: DB_Password
+---
+#inject all secrets as file in the volume
+volumes:
+- name: app-secret-volume
+  secret: 
+    secretName: app-secret
+---
+ls /opt/app-secret-volumes              > DB_Host DB_Password DB_User
+cat /opt/app-secret-volumes/DB_Password > paswrd
