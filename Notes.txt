@@ -689,3 +689,31 @@ kubectl create configmap  webapp-config-map --from-literal=APP_COLOR=darkblue --
          name: webapp-config-map
          key: APP_COLOR
 ---
+---secrets---
+kubectl create secret generic <secretname>   #imperative
+kubectl create secret generic app-secret --from-literal=DB_Host=mysql --from-literal=DB_User=root --from-literal=DB_Password=paswrd 
+kubectl create secret generic <secretname> --from-file=<pathtofile>
+kubectl create secret generic <secretname>
+---
+#secret-data.yaml
+apiVersion: v1
+kind: secret
+metadata:
+  name: app-secret
+data:
+  DB_Host: mysql 
+  DB_User: root
+  DB_Password: paswrd
+---
+#to hash the values above for more security 
+echo -n 'mysql' | base64                    #to convert mysql into hashing value then put the hashed values in the file 
+kubectl get secrets 
+kubectl get secret <secretname> -o yaml 
+echo -n 'bXlzcWw=' | base64 > mysql          #to decode 
+
+#now configure it with the pod 
+spec:
+  envFrom:
+    - secretRef:
+          name: app-secret
+---
