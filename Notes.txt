@@ -759,3 +759,5 @@ containers:
   - --encryption-provider-config=/etc/kubernetes/enc/enc.yaml 
 #also add volume mounts 
 #add specification for location of local directory
+#to ensure all secrets are encrypted
+kubectl get secrets --all-namespaces -o json | kubectl replace -f -
