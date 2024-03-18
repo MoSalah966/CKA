@@ -697,7 +697,7 @@ kubectl create secret generic <secretname>
 ---
 #secret-data.yaml
 apiVersion: v1
-kind: secret
+kind: Secret
 metadata:
   name: app-secret
 data:
@@ -712,7 +712,7 @@ kubectl get secret <secretname> -o yaml
 echo -n 'bXlzcWw=' | base64 > mysql          #to decode 
 
 #now configure it with the pod 
-spec:
+containers:
   envFrom:
     - secretRef:
           name: app-secret
@@ -733,3 +733,29 @@ volumes:
 ---
 ls /opt/app-secret-volumes              > DB_Host DB_Password DB_User
 cat /opt/app-secret-volumes/DB_Password > paswrd
+----
+apt-get install etcd-client                                           #to install etcd and use etcdctl command
+ps -aux | grep kube-api | grep "encryption-provider-config"           #to check if encryption at rest enabled or not
+#to enable encryption
+head -c 32 /dev/urandom | base64
+vim enc.yaml
+---
+apiVersion: apiserver.config.k8s.io/v1
+kind: EncryptionConfiguration
+resources:
+  - resources:
+    - secrets
+    providers:
+      - aescbc:
+          keys:
+            - name: key1
+              secret: <result from the head command>
+      - identity: {}
+---
+mkdir /etc/kubernetes/enc
+mv enc.yaml /etc/kubernetes/enc/
+vim /etc/kubernetes/manifests/kube-apiserver.yaml 
+containers:
+  - --encryption-provider-config=/etc/kubernetes/enc/enc.yaml 
+#also add volume mounts 
+#add specification for location of local directory
