@@ -799,4 +799,26 @@ spec:
     image: busybox:1.28
     command: ['sh', '-c', 'until nslookup mydb; do echo waiting for mydb; sleep 2; done;']
 ---
-
+-------------------------
+maintenance mode 
+-------------------------
+#to safely upgrade a node 
+#drain the node 
+kubectl drain node-1 
+#the pods will move to other nodes in the cluster
+#reboot the node 
+#after that back it again 
+kubectl uncordon node-1 
+kubectl cordon node-1     #make it unschedualable, unlike drain, it doesn't terminate pods or move the pods, it just make it unschedualable
+kubectl drain node01 --ignore-daemonsets
+-------------------------
+upgrade the cluster
+_________________________
+kubeadm upgrade plan        #will give you info about cluster current version and kubeadm version and latest stable version,list all components version
+kubeadm upgrade apply       #if you use kubeadm and want to upgrade 
+#after upgrade every node, you have to upgrade manually the kubelet on every node
+#to upgrade kubeadm
+apt upgrade -y kubeadm=1.12.0-00  #to upgrade to 1.12.0
+#upgrade the cluster using this
+kubeadm upgrade apply v1.12.0         #control plane component will be updated once complete and this is the master node 
+#you have to upgrade the kubelets next step
