@@ -821,4 +821,15 @@ kubeadm upgrade apply       #if you use kubeadm and want to upgrade
 apt upgrade -y kubeadm=1.12.0-00  #to upgrade to 1.12.0
 #upgrade the cluster using this
 kubeadm upgrade apply v1.12.0         #control plane component will be updated once complete and this is the master node 
-#you have to upgrade the kubelets next step
+#you have to upgrade the kubelets in the master node next step ,if you have kubelet on them
+apt upgrade -y kubelet=1.12.0-00
+systemctl restart kubelet
+
+#upgrade worker nodes 
+kubectl drain <nodename>
+#upgrade the kubeadm in worker node
+apt upgrade -y kubeadm=1.12.0-00
+apt upgrade -y kubelet=1.12.0-00
+kubeadm upgrade node config --kubelet-version v1.12.0
+systemctl restart kubelet
+kubectl uncordon <nodename>
