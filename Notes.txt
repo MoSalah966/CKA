@@ -855,3 +855,56 @@ kubeadm upgrade node
 apt-get install kubelet=1.29.0-1.1
 systemctl daemon-reload
 systemctl restart kubelet
+
+#a better approach to back up resource configuration is to query the kube-apiserver 
+#using the kubectl or by accessing the api server directly and save all resource configuration for all objects created on cluster
+#as a copy
+kubectl get all --all-namespaces -o yaml > all-deploy-services.yaml   #one way to collect these confs 
+#the etcd cluster stores info about the state of the cluster 
+#so you can choose backup etcd rather than store the resources itself 
+etcdctl snapshot save snapshot.db    #to take a snapshot from the etcd 
+etcdctl snapshot status snapshot.db 
+#to restore 
+service kube-apiserver stop 
+etcdctl snapshot restore snapshot.db --data-dir /var/lib/etcd-from-backup
+#we then configure the etcd conf file to use the new data dir by adding this line 
+--data-dir=/var/lib/etcd-from-backup
+systemctl daemon-reload
+service etcd restart 
+service kube-apiserver start 
+#To make use of etcdctl for tasks such as back up and restore, make sure that you set the ETCDCTL_API to 3.
+export ETCDCTL_API=3        #on master node 
+etcdctl version
+kubectl -n kube-system logs etcd-controlplane | grep -i 'etcd-version'
+///
+Since our ETCD database is TLS-Enabled, the following options are mandatory:
+
+–cacert                verify certificates of TLS-enabled secure servers using this CA bundle
+
+–cert                    identify secure client using this TLS certificate file
+
+–endpoints=[127.0.0.1:2379] This is the default as ETCD is running on master node and exposed on localhost 2379.
+
+–key                  identify secure client using this TLS key file
+///
+ETCDCTL_API=3 etcdctl --endpoints=https://[127.0.0.1]:2379 \
+--cacert=/etc/kubernetes/pki/etcd/ca.crt \
+--cert=/etc/kubernetes/pki/etcd/server.crt \
+--key=/etc/kubernetes/pki/etcd/server.key \
+snapshot save /opt/snapshot-pre-boot.db
+ETCDCTL_API=3 etcdctl  --data-dir /var/lib/etcd-from-backup snapshot restore /opt/snapshot-pre-boot.db
+vim /etc/kubernetes/manifests/etcd.yaml
+---
+    volumeMounts:
+    - mountPath: /var/lib/etcd-from-backup
+  volumes:
+  - hostPath:
+      path: /var/lib/etcd-from-backup
+      type: DirectoryOrCreate
+    name: etcd-data
+---
+watch "crictl ps | grep etcd"
+///
+Note 2: If the etcd pod is not getting Ready 1/1, then restart it by 
+kubectl delete pod -n kube-system etcd-controlplane and wait 1 minute.
+///
