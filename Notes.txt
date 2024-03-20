@@ -833,3 +833,25 @@ apt upgrade -y kubelet=1.12.0-00
 kubeadm upgrade node config --kubelet-version v1.12.0
 systemctl restart kubelet
 kubectl uncordon <nodename>
+#to navigate between nodes 
+#from controlplane to node01
+ssh node01
+#the drain command has to be run in the controlplane not on the worker nodes even if we are upgrading worker nodes 
+vim /etc/apt/sources.list.d/kubernetes.list
+#update the version 
+apt update 
+apt-cache madison kubeadm
+apt-get install kubeadm=1.29.0-1.1
+kubeadm upgrade plan v1.29.0
+apt-get install kubelet=1.29.0-1.1
+apt-get install kubelet=1.29.0-1.1
+systemctl daemon-reload
+systemctl restart kubelet
+kubectl uncordon controlplane
+vim /etc/apt/sources.list.d/kubernetes.list
+apt-cache madison kubeadm
+apt-get install kubeadm=1.29.0-1.1
+kubeadm upgrade node
+apt-get install kubelet=1.29.0-1.1
+systemctl daemon-reload
+systemctl restart kubelet
