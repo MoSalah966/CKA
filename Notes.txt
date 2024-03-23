@@ -972,6 +972,17 @@ kubectl get serviceaccount
 #TLS in general 
 ssh-keygen                                            #make public and private keys 
 cat ~/.ssh/authorized_keys
-openssl genrsa -out keyname.key 1024 
+openssl genrsa -out keyname.key 2048                  #create private key 
 openssl rsa -in keyname.key -pubout > keyname.pem
 openssl req -new -key keyname.key -out certname.csr -subj "/C=US/ST=CA/O=MyOrg, Inc./CN=mydomain.com"  #request a cert
+
+openssl genrsa -out ca.key 2048                                                                        #create private key 
+openssl req -new -key keyname.key -out certname.csr -subj "/CN=KUBERNETES-CA" -out ca.sr               #request a cert
+openssl x509 -req -in ca.csr -signkey ca.key -out ca.crt                                               #assign a certificate
+
+##generate the client certificates 
+#admin user 
+#same last three commands 
+#in the second command request a certificate "CN=kube-admin"
+openssl req -new -key admin.key -subj "/CN=kube-admin/O=system:masters" -out admin.csr
+openssl x509 -req -in admin.csr -CA ca.crt -CAkey ca.key -out admin.crt   
