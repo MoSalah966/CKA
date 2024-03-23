@@ -213,7 +213,7 @@ kubectl expose pod redis --port=6379 --name redis-service --dry-run=client -o ya
 kubectl create service clusterip httpd --tcp=80:80
 -----------------------------------------------------------------------------
 #without a scheduler, the easiest way to shcedule a pod is to simply set the nodeName field to the name of the node in the pod spec file "parallel to containers:"
-#if you want to add an existing pod to a node, create a binding object and send a post request to the pod binding API thus mimicking what the actual scheduler does 
+#if you want to add an existing pod to a node, create a binding object and send a post request to the pod binding API thus mimicking what 
 the actual scheduler does. 
 ---
 apiVersion: v1
@@ -225,7 +225,753 @@ target:
   kind: node
   name: <nameoftargetnode>
   ---
-curl --header "content-type:application/json" --request POST --data '{"apiVersion":"v1", "kind": "Binding"...}
+  curl --header "content-type:application/json" --request POST --data '{"apiVersion":"v1", "kind": "Binding"...}
 kubectl get pods -n kube-system                           #show the k8s system pods like etcd, scheduler..
 kubectl replace --force -f nginx.yaml                     #rather that delete and create the pod again
 kubectl get pods --watch 
+kubectl get pods --selector <labelname>=<labelvalue>      #to select a pod with a label 
+#You can use Kubernetes annotations to attach arbitrary non-identifying metadata to objects. Clients such as tools and libraries can retrieve this metadata.
+#annotations are not used to identify and select objects. 
+#The metadata in an annotation can be small or large, structured or unstructured, and can include characters not permitted by labels. 
+#It is possible to use labels as well as annotations in the metadata of the same object.
+///
+"metadata": {
+  "annotations": {
+    "key1" : "value1",
+    "key2" : "value2"
+  }
+}
+///
+kubectl get all --selector env=prod,bu=finance,tier=frontend        #give a pod shared with all these selectors 
+kubectl get pods --selector env=dev --no-headers | wc -l            #get number of pods with label env dev 
+--------------------------------------
+---Taints and Tolerations---
+kubectl taint nodes <nodename> key=value:taint-effect               #to taint a node
+#there are three main effects: NoSchedule PreferNoSchedule NoExecute
+#https://www.hackertouch.com/what-is-the-difference-between-noexecute-noschedule-prefernoschedule.html  #to explain difference
+#to add toleration to a pod
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: podName
+spec:
+  containers:
+  - name: nginx-container
+    image: nginx
+  tolerations:
+  - key: "app"
+    operator: "Equal"
+    value: "blue"
+    effect: "NoSchedule"
+---
+kubectl taint nodes node1 
+#if you want to restict the pods to certain nodes, that is another concept called node affinity 
+#when k8s cluster initiated, a taint already put on the worker node not to get pods through scheduler
+#to see this taint
+kubectl describe node kubemaster | grep taint
+kubectl describe nodes node01 | grep -i taints
+kubectl taint nodes controlplane node-role.kubernetes.io/control-plane:NoSchedule-    #untint the node with the tint value (node-role.kubernetes.io/control-plane:NoSchedule)
+kubectl run podname -image=imagename --dry-run=client -o yaml > file.yaml             #create a pod content in file.yaml with dry run (without creating it)
+-----------------------------------------------------------------------------------
+apiVersion: v1
+kind: Pod
+metadata:
+  name: myapp-pod
+spec:
+  containers:
+  - name: data-processing
+    image: data-processor
+  nodeSelector:
+    size: large                                           #this will be a label on the node that we want to select
+----------------
+#to label a node
+kubectl label node <nodename> <label-key>=<label-value>
+------
+---node affinity---
+#the purpose of it is to ensure that the pod will select a particular node
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: myapp-pod
+spec:
+  containers:
+  - name: data-processing
+    image: data-processor
+  affinity:
+   nodeAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: size
+          operator: In                                # the In operator make sure that this pod will be in the node with the key and value label
+          values:
+          - Large
+-----------------
+# you can make the labels like 
+          - Large
+          - Medium
+# to make sure it could be in a node with this label or this label
+# we can put the operator to "NotIn" and that's means this pod will not be at the node with the key value labels 
+#another label "Exists" check if the label exists on the nodes 
+-------------------------------------
+---Node Affinity Types---
+availabel:                                                #any change in node affinity after running will not affect the pod
+requiredDuringSchedulingIgnoredDuringExecution            #if the matching pod does not exist, the pod will not be scheduled 
+preferredDuringSchedulingIgnoredDuringExecution           #if the matching pod does not exist, the scheduler will simply ignore node affinity rules
+
+planned:                                                  #during execution means a change while the pod is running and this change affect node affinity
+requiredDuringSchedulingRequiredDuringExecution           #required to affect the node after the running phase is exist 
+preferredDuringSchedulingRequiredDuringExecution
+-------------------------------------------
+#taints and tolerations make sure that other pods will not be in the node that tainted
+#but node affinity doesn't mean that there's no chance that other pods may end up on the node
+#after we use taints and tolerations to prevent other pods from being placed on our nodes
+#we use affinity to prevent our pods from being placed on their nodes
+#https://medium.com/saas-infra/taints-and-tolerations-node-affinity-and-node-selector-explained-f329653c2bc6#id_token=eyJhbGciOiJSUzI1NiIsImtpZCI6IjZmOTc3N2E2ODU5MDc3OThlZjc5NDA2MmMwMGI2NWQ2NmMyNDBiMWIiLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLCJhenAiOiIyMTYyOTYwMzU4MzQtazFrNnFlMDYwczJ0cDJhMmphbTRsamRjbXMwMHN0dGcuYXBwcy5nb29nbGV1c2VyY29udGVudC5jb20iLCJhdWQiOiIyMTYyOTYwMzU4MzQtazFrNnFlMDYwczJ0cDJhMmphbTRsamRjbXMwMHN0dGcuYXBwcy5nb29nbGV1c2VyY29udGVudC5jb20iLCJzdWIiOiIxMDAxNzA5OTMxMTAwMjM3MTkxODciLCJlbWFpbCI6Im1vbW9tczIwMTBAZ21haWwuY29tIiwiZW1haWxfdmVyaWZpZWQiOnRydWUsIm5iZiI6MTcwOTYyMzcyMSwibmFtZSI6Ik1vaGFtZWQgU2FsYWgiLCJwaWN0dXJlIjoiaHR0cHM6Ly9saDMuZ29vZ2xldXNlcmNvbnRlbnQuY29tL2EvQUNnOG9jSUxuSVl5YU9NSnktaXE3OTZlY1pWQVNIMWpLTXEwX1dIdktmeTNJZjRnVlJJPXM5Ni1jIiwiZ2l2ZW5fbmFtZSI6Ik1vaGFtZWQiLCJmYW1pbHlfbmFtZSI6IlNhbGFoIiwibG9jYWxlIjoiZW4iLCJpYXQiOjE3MDk2MjQwMjEsImV4cCI6MTcwOTYyNzYyMSwianRpIjoiMWMyMjc1ODM4MDIzYTZlYThmNGE5NWE5N2I3N2Y4NzdjODgwYzk4NCJ9.Ji4NWJZuHipep3pPQC-3KoAIUoNosTTvgF5sYxw8raqYj84XAhBSxLLPXH9uNplCQlRZG1U_XAvtc6rrKKEitKA0ZNKbD8IyvidUWfLRQvISkfme1qnvvNdsmRxQ4N1PEPowh8VcqIu1Cy-4VLCCIo_q14x9ZskwvFyNX4bVotcTGhZ-KeqERqRavXegWxP_lvmqjDdcD4HCLz04nY0Kp7DQ9DXwmoMjoYcdSgUocuvBS1IM9GPfvXM-Jwdfe5KRvp_ojwspfS47WY-DdPIVxKOQSbfy5uB-IGEbl-m2BvITT_0o33ZoMTzOewUIv6EDnKqO-cUkRauhycYLo3eUQg
+--------------------------------------------
+---resource requests---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: webapp
+  labels:
+    name:webapp
+spec:
+  containers:
+  - name: webapp
+    image: nginx
+    ports:
+      - containerport:8080
+    resources:                                        # you can specify/request minimum resources for your pod here 
+      requests:
+        memory: "4Gi"
+        cpu: 2
+      limits:                                         #you can specify the limits of your resources here 
+        memory: "6Gi"
+        cpu: 4
+-----------------------------
+#the scheduler will looks at a node that has that amount of resources
+#if a pod does not have a request field and other pods consume all resources, this pod could starve of lacking of resources
+#we cannot throttle memory like CPU, so the only way to retrieve memory from a pod is to kill the pod to free up some memory
+-----------------------------
+---limit range---
+#limit-range-cpu.yaml
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: cpu-resource-constraint
+spec:
+  limits:
+  - default:                          #limit
+      cpu: 500m
+    defaultRequest:                   #request 
+      cpu: 500m
+    max:                              #limit
+      cpu: "1"
+    min:                              #request 
+      cpu: 100m
+    type: container 
+-----------------------------
+#limit-range-memory.yaml
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: memory-resource-constraint
+spec:
+  limits:
+  - default:                          #limit
+      memory: 1Gi 
+    defaultRequest:                   #request 
+      memory: 1Gi 
+    max:                              #limit
+      memory: 1Gi
+    min:                              #request 
+      memory: 500Mi
+    type: container 
+-----------------------------
+---resource quotas---
+#resource-quota.yaml
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name:my-resource-quota
+spec:
+  hard:
+    requests.cpu: 4
+    requests.memory: 4Gi
+    limits.cpu: 10
+    limits.memory: 10Gi
+---
+#A DaemonSet ensures that all (or some) Nodes run a copy of a Pod.
+#As nodes are added to the cluster, Pods are added to them. As nodes are removed from the cluster, 
+#those Pods are garbage collected. Deleting a DaemonSet will clean up the Pods it created.
+---daemonSet Definition---
+#daemon-set-definition.yaml > same as replicaset file
+---
+apiVersion: apps/v1
+kind: daemonSet
+metadata:
+  labels:
+    app: elasticsearch
+  name: elasticsearch
+  namespace: kube-system
+spec:
+  selector:
+    matchLabels:
+      app: monitoring-agent
+  template:
+    metadata:
+      labels:
+        app: monitoring-agent
+    spec:
+      containers:
+      - name: monitoring-agent
+        image: monitoring-agent
+------------------------------
+kubectl create -f daemon-set-definition.yaml
+kubectl get daemonsets 
+kubectl describe daemonsets <daemonsetname>
+kubectl get daemonsets --all-namespaces = kubectl get daemonsets -A 
+#as mentioned before, in pod file, set the nodeName property to determine the exact node that the pod will be in (until version 1.12)
+#from v1.12 - use nodeAffinity and default scheduler
+kubectl describe daemonset <daemonsetName> --namespace=<namespaceName> 
+#imperative example:
+kubectl create deployment <deploymentname> -n <namespaceName> --image=<imagename> --dryrun=client -o yaml > file.yaml 
+----------------------------------
+#Static Pods are managed directly by the kubelet daemon on a specific node, without the API server observing them. 
+#Unlike Pods that are managed by the control plane (for example, a Deployment); instead, the kubelet watches each static Pod (and restarts it if it fails).
+#Static Pods are always bound to one Kubelet on a specific node.
+---
+# Choose a directory, say /etc/kubernetes/manifests and place a web server Pod definition there, for example /etc/kubernetes/manifests/static-web.yaml:
+# Run this command on the node where kubelet is running
+mkdir -p /etc/kubernetes/manifests/
+cat <<EOF >/etc/kubernetes/manifests/static-web.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: static-web
+  labels:
+    role: myrole
+spec:
+  containers:
+    - name: web
+      image: nginx
+      ports:
+        - name: web
+          containerPort: 80
+          protocol: TCP
+EOF
+---
+#if you want to get static pods in all name spaces 
+#Run the command kubectl get pods --all-namespaces and look for those with -controlplane appended in the name
+#to get which nodes are the static pods created:
+#kubectl get pods -A -o wide
+#how to know the path for the static pod 
+ps -aux | grep kubelet #identify the config file > --config=/var/lib/kubelet/config.yaml
+ps -aux | grep /usr/bin/kubelet
+grep -i staticpod /var/lib/kubelet/config.yaml
+-------
+#creating static pod
+kubectl run --restart=Never --image=busybox static-busybox --dry-run=client -o yaml --command -- sleep 1000 > /etc/kubernetes/manifests/static-busybox.yaml
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  creationTimestamp: null
+  labels:
+    run: static-busybox
+  name: static-busybox
+spec:
+  containers:
+  - command:
+    - sleep
+    - "1000"
+    image: busybox
+    name: static-busybox
+    resources: {}
+  dnsPolicy: ClusterFirst
+  restartPolicy: Never
+status: {}
+---
+---multiple schedulers---
+#to create another scheduler, you have to give it a file with another name than the default-scheduler name 
+---
+apiVersion: kubescheduler.config.k8s.io/v1
+kind: KubeSchedulerConfiguration
+profiles:
+- schedulerName: <name>
+---
+#another way to deploy another scheduler as a pod
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: my-custom-scheduler
+  namespace: kube-system
+spec:
+  containers:
+  - command:
+    - kube-scheduler
+    - --address=127.0.0.1
+    - --kubeconfig=/etc/kubernetes/scheduler.conf
+    - --config=/etc/kubernetes/my-scheduler-config.yaml
+
+    image: k8s.gcr.io/kube-scheduler-amd64:v1.11.3
+    name: kubescheduler
+---
+we have to add leaderelection if we have HA and more than one master node, and want to set an active node from a specific shceduler
+---
+apiVersion: kubescheduler.config.k8s.io/v1
+kind: KubeSchedulerConfiguration
+profiles:
+- schedulerName: <name>
+leaderElection:
+  leaderElect: true                             #if exist,only the leader instance will actively schedule pods. If the leader instance fails, another instance will be elected as the new leader to continue scheduling pods.
+  resourceNamespace: kube-system
+  resourceName: lock-object-my-scheduler
+---
+#to deploy an additional scheduler
+#https://kubernetes.io/docs/tasks/extend-kubernetes/configure-multiple-schedulers/
+
+kubectl get pods --namespace=kube-system  #to see system pods like schedulers that you have 
+#to use the new scheduler, while creating the pod specify the scheduler name 
+spec:
+  containers:
+  - image: nginx
+    name: nginx
+  schedulerName: my-custom-scheduler
+---
+kubectl create -f pod.yaml 
+kubectl get events -o wide                                      #to know which scheduler schedule which pod
+kubectl logs my-custom-scheduler --name-space=kube-system       #to get logs
+#you can determine priority of the pod 
+spec:
+  priorityClassName: high-priority                              #it will be shceduled first
+---
+---configure scheduler profiles---
+apiVersion: kubescheduler.config.k8s.io/v1
+kind: KubeSchedulerConfiguration
+profiles:
+- schedulerName: <name>
+  plugins:
+    score:
+      disabled:
+       - name: TaintToleration
+      enabled:
+       - name: MyCustomPluginA
+       - name: MyCustomPluginB
+--------------------------------------
+--------------------------------------
+---monitoring and logging---
+#to enable metric-server in minikube cluster 
+minikube addons enable metrics-server
+#for other environments
+git clone https://github.com/kubernetes-sigs/metrics-server.git
+kubectl create -f deploy/1.8+/                                    #deploy pods to enable metrics server to poll for perfomance metrics from the nodes in cluster 
+
+kubectl top node                                                  #cpu and memory consumption for nodes 
+kubectl top pod 
+-------
+---application logs---
+kubectl logs -f <podname>
+kubectl logs -f <podname> <containername>                         #to get a specific container's log inside the pod 
+----------------------------------------
+kubectl rollout status deployment/<nameofdeployment>              #to see the status of the rollout
+kubectl rollout history deployment/<nameofdeployment>             #show the revisions and history of the rollout
+#rolling update is the default deployment strategy
+#just run the kubectl apply deployment command and the upgrade will take place 
+#but you can use kubectl set image command to update the image of your app 
+kubectl rollout undo deployment/<deploymentname                   #to undo the rollout of the deployment (rollback)
+---
+spec:
+  minReadySeconds: 20
+  progressDeadlineSeconds: 600
+  replicas: 4
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      name: webapp
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        name: webapp
+---
+  strategy:
+    type: Recreate
+----
+---create a pod from docker image with sleep command---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: ubuntu-sleep-pod
+spec:
+  containers:
+    - name: ubuntu-sleeper
+      image: ubuntu-sleeper
+      args: ["10"]                                          # it's like entrypoint: sleep CMD: 10 and like in linux sleep 10 command 
+---
+#the args section override the CMD part in the docker file 
+#if you want to override the entrypoint field from the pod file 
+containers:
+  - name: 
+    command: ["sleep 2.0"]   #to override the entrypoint field 
+    args: ["10"]
+----
+---environment variable---
+docker run -e APP_COLOR=pink simple-webapp-color
+#equal in k8s
+spec:
+  env:
+    - name: APP_COLOR
+      value: pink                       #this way named plain key value 
+---
+env:
+  - name: APP_COLOR
+    valueFrom: 
+        configMapKeyRef:                #config map way
+---
+env:
+  - name: APP_COLOR
+    valueFrom:
+        secretKeyRef:                  #secret way 
+---
+---configmap--
+#configmapfile
+APP_COLOR: blue
+APP_MODE: prod
+---
+kubectl create -f ...       #declarative way 
+kubectl create configmap <config-name> --from-literal=<key>=<value>   #imperative way 
+#example kubectl create configmap \ app-config --from-literal=APP_COLOR=blue \ --from-literal=APP_MOD=prod 
+#another way
+kubectl create configmap <configname> --from-file=<path-to-file>
+kubectl ceate configmap \ app-config --from-file=app.config.properties
+
+#declarative
+config-map.yaml
+apiVersion: v1
+kind: configMap
+metadata:
+  name: app-config 
+data:
+  APP_COLOR:blue
+  APP_MOD:prod
+---
+kubectl get configmaps  #also describe command 
+#how to link it with pod 
+---
+spec:
+  envFrom:
+    - configMapRef:
+          name: app-config
+---
+spec:
+  valueFrom
+    configMapKeyRef:
+      name: app-config
+      key: APP_COLOR         #another way 
+---
+kubectl create configmap  webapp-config-map --from-literal=APP_COLOR=darkblue --from-literal=APP_OTHER=disregard
+#from label
+---
+  - env:
+    - name: APP_COLOR
+      valueFrom:
+       configMapKeyRef:
+         name: webapp-config-map
+         key: APP_COLOR
+---
+---secrets---
+kubectl create secret generic <secretname>   #imperative
+kubectl create secret generic app-secret --from-literal=DB_Host=mysql --from-literal=DB_User=root --from-literal=DB_Password=paswrd 
+kubectl create secret generic <secretname> --from-file=<pathtofile>
+kubectl create secret generic <secretname>
+---
+#secret-data.yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: app-secret
+data:
+  DB_Host: mysql 
+  DB_User: root
+  DB_Password: paswrd
+---
+#to hash the values above for more security 
+echo -n 'mysql' | base64                    #to convert mysql into hashing value then put the hashed values in the file 
+kubectl get secrets 
+kubectl get secret <secretname> -o yaml 
+echo -n 'bXlzcWw=' | base64 > mysql          #to decode 
+
+#now configure it with the pod 
+containers:
+  envFrom:
+    - secretRef:
+          name: app-secret
+---
+#another way
+env:
+  - name: DB_Password
+    valueFrom:
+      secretKeyRef:
+        name: app-secret
+        key: DB_Password
+---
+#inject all secrets as file in the volume
+volumes:
+- name: app-secret-volume
+  secret: 
+    secretName: app-secret
+---
+ls /opt/app-secret-volumes              > DB_Host DB_Password DB_User
+cat /opt/app-secret-volumes/DB_Password > paswrd
+----
+apt-get install etcd-client                                           #to install etcd and use etcdctl command
+ps -aux | grep kube-api | grep "encryption-provider-config"           #to check if encryption at rest enabled or not
+#to enable encryption
+head -c 32 /dev/urandom | base64
+vim enc.yaml
+---
+apiVersion: apiserver.config.k8s.io/v1
+kind: EncryptionConfiguration
+resources:
+  - resources:
+    - secrets
+    providers:
+      - aescbc:
+          keys:
+            - name: key1
+              secret: <result from the head command>
+      - identity: {}
+---
+mkdir /etc/kubernetes/enc
+mv enc.yaml /etc/kubernetes/enc/
+vim /etc/kubernetes/manifests/kube-apiserver.yaml 
+containers:
+  - --encryption-provider-config=/etc/kubernetes/enc/enc.yaml 
+#also add volume mounts 
+#add specification for location of local directory
+#to ensure all secrets are encrypted
+kubectl get secrets --all-namespaces -o json | kubectl replace -f -
+///
+in multicontainers, you may want to run a process that runs to completion in a container.
+For example a process that pulls a code or binary from a repository that will be used by the main web application.
+That is a task that will be run only one time when the pod is first created.
+Or a process that waits for an external service or database to be up before the actual application starts.
+That’s where initContainers comes in.
+///
+#An initContainer is configured in a pod like all other containers, except that it is specified inside a initContainers section, like this:
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: myapp-pod
+  labels:
+    app: myapp
+spec:
+  containers:
+  - name: myapp-container
+    image: busybox:1.28
+    command: ['sh', '-c', 'echo The app is running! && sleep 3600']
+  initContainers:
+  - name: init-myservice
+    image: busybox
+    command: ['sh', '-c', 'git clone <some-repository-that-will-be-used-by-application> ;']
+---
+#When a POD is first created the initContainer is run, and the process in the initContainer must run to a completion before 
+#the real container hosting the application starts.
+#you can configure multiple such initContainers as well, like how we did for multi-containers pod. 
+#In that case, each init container is run one at a time in sequential order.
+---
+  initContainers:
+  - name: init-myservice
+    image: busybox:1.28
+    command: ['sh', '-c', 'until nslookup myservice; do echo waiting for myservice; sleep 2; done;']
+  - name: init-mydb
+    image: busybox:1.28
+    command: ['sh', '-c', 'until nslookup mydb; do echo waiting for mydb; sleep 2; done;']
+---
+-------------------------
+maintenance mode 
+-------------------------
+#to safely upgrade a node 
+#drain the node 
+kubectl drain node-1 
+#the pods will move to other nodes in the cluster
+#reboot the node 
+#after that back it again 
+kubectl uncordon node-1 
+kubectl cordon node-1     #make it unschedualable, unlike drain, it doesn't terminate pods or move the pods, it just make it unschedualable
+kubectl drain node01 --ignore-daemonsets
+-------------------------
+upgrade the cluster
+_________________________
+kubeadm upgrade plan        #will give you info about cluster current version and kubeadm version and latest stable version,list all components version
+kubeadm upgrade apply       #if you use kubeadm and want to upgrade 
+#after upgrade every node, you have to upgrade manually the kubelet on every node
+#to upgrade kubeadm
+apt upgrade -y kubeadm=1.12.0-00  #to upgrade to 1.12.0
+#upgrade the cluster using this
+kubeadm upgrade apply v1.12.0         #control plane component will be updated once complete and this is the master node 
+#you have to upgrade the kubelets in the master node next step ,if you have kubelet on them
+apt upgrade -y kubelet=1.12.0-00
+systemctl restart kubelet
+
+#upgrade worker nodes 
+kubectl drain <nodename>
+#upgrade the kubeadm in worker node
+apt upgrade -y kubeadm=1.12.0-00
+apt upgrade -y kubelet=1.12.0-00
+kubeadm upgrade node config --kubelet-version v1.12.0
+systemctl restart kubelet
+kubectl uncordon <nodename>
+#to navigate between nodes 
+#from controlplane to node01
+ssh node01
+#the drain command has to be run in the controlplane not on the worker nodes even if we are upgrading worker nodes 
+vim /etc/apt/sources.list.d/kubernetes.list
+#update the version 
+apt update 
+apt-cache madison kubeadm
+apt-get install kubeadm=1.29.0-1.1
+kubeadm upgrade plan v1.29.0
+apt-get install kubelet=1.29.0-1.1
+apt-get install kubelet=1.29.0-1.1
+systemctl daemon-reload
+systemctl restart kubelet
+kubectl uncordon controlplane
+vim /etc/apt/sources.list.d/kubernetes.list
+apt-cache madison kubeadm
+apt-get install kubeadm=1.29.0-1.1
+kubeadm upgrade node
+apt-get install kubelet=1.29.0-1.1
+systemctl daemon-reload
+systemctl restart kubelet
+
+#a better approach to back up resource configuration is to query the kube-apiserver 
+#using the kubectl or by accessing the api server directly and save all resource configuration for all objects created on cluster
+#as a copy
+kubectl get all --all-namespaces -o yaml > all-deploy-services.yaml   #one way to collect these confs 
+#the etcd cluster stores info about the state of the cluster 
+#so you can choose backup etcd rather than store the resources itself 
+etcdctl snapshot save snapshot.db    #to take a snapshot from the etcd 
+etcdctl snapshot status snapshot.db 
+#to restore 
+service kube-apiserver stop 
+etcdctl snapshot restore snapshot.db --data-dir /var/lib/etcd-from-backup
+#we then configure the etcd conf file to use the new data dir by adding this line 
+--data-dir=/var/lib/etcd-from-backup
+systemctl daemon-reload
+service etcd restart 
+service kube-apiserver start 
+#To make use of etcdctl for tasks such as back up and restore, make sure that you set the ETCDCTL_API to 3.
+export ETCDCTL_API=3        #on master node 
+etcdctl version
+kubectl -n kube-system logs etcd-controlplane | grep -i 'etcd-version'
+///
+Since our ETCD database is TLS-Enabled, the following options are mandatory:
+
+–cacert                verify certificates of TLS-enabled secure servers using this CA bundle
+
+–cert                    identify secure client using this TLS certificate file
+
+–endpoints=[127.0.0.1:2379] This is the default as ETCD is running on master node and exposed on localhost 2379.
+
+–key                  identify secure client using this TLS key file
+///
+ETCDCTL_API=3 etcdctl --endpoints=https://[127.0.0.1]:2379 \
+--cacert=/etc/kubernetes/pki/etcd/ca.crt \
+--cert=/etc/kubernetes/pki/etcd/server.crt \
+--key=/etc/kubernetes/pki/etcd/server.key \
+snapshot save /opt/snapshot-pre-boot.db
+ETCDCTL_API=3 etcdctl  --data-dir /var/lib/etcd-from-backup snapshot restore /opt/snapshot-pre-boot.db
+vim /etc/kubernetes/manifests/etcd.yaml
+---
+    volumeMounts:
+    - mountPath: /var/lib/etcd-from-backup
+  volumes:
+  - hostPath:
+      path: /var/lib/etcd-from-backup
+      type: DirectoryOrCreate
+    name: etcd-data
+---
+watch "crictl ps | grep etcd"
+///
+Note 2: If the etcd pod is not getting Ready 1/1, then restart it by 
+kubectl delete pod -n kube-system etcd-controlplane and wait 1 minute.
+///
+
+kubectl config use-context <clustername>                                #change from cluster to cluster 
+kubectl config view 
+kubectl config use-context cluster1                                     #switch to cluster one 
+kubectl -n kube-system describe pod etcd-cluster1-controlplane 
+
+ETCDCTL_API=3 etcdctl \
+ --endpoints=https://127.0.0.1:2379 \
+ --cacert=/etc/etcd/pki/ca.pem \
+ --cert=/etc/etcd/pki/etcd.pem \
+ --key=/etc/etcd/pki/etcd-key.pem \
+  member list                                                           #this long command check how many nodes in the etcd cluster (member list)
+
+###taking backup from lab 
+kubectl describe  pods -n kube-system etcd-cluster1-controlplane  | grep pki
+>> --cert-file=/etc/kubernetes/pki/etcd/server.crt
+      --key-file=/etc/kubernetes/pki/etcd/server.key
+      --peer-cert-file=/etc/kubernetes/pki/etcd/peer.crt
+      --peer-key-file=/etc/kubernetes/pki/etcd/peer.key
+      --peer-trusted-ca-file=/etc/kubernetes/pki/etcd/ca.crt
+      --trusted-ca-file=/etc/kubernetes/pki/etcd/ca.crt
+      /etc/kubernetes/pki/etcd from etcd-certs (rw)
+    Path:          /etc/kubernetes/pki/etcd
+
+kubectl describe  pods -n kube-system etcd-cluster1-controlplane  | grep advertise-client-urls
+>> --advertise-client-urls=https://10.1.218.16:2379
+ssh cluster1-controlplane 
+ETCDCTL_API=3 etcdctl --endpoints=https://10.1.220.8:2379 --cacert=/etc/kubernetes/pki/etcd/ca.crt 
+--cert=/etc/kubernetes/pki/etcd/server.crt --key=/etc/kubernetes/pki/etcd/server.key snapshot save /opt/cluster1.db
+
+#Finally, copy the backup to the student-node. To do this, go back to the student-node and use scp as shown below:
+scp cluster1-controlplane:/opt/cluster1.db /opt/cluster1.db
+-------------------------------------------------------------
+###backup for external etcd 
+scp /opt/cluster2.db etcd-server:/root          #copy the backup to the etcd cluster 
+ETCDCTL_API=3 etcdctl --endpoints=https://127.0.0.1:2379 
+--cacert=/etc/etcd/pki/ca.pem --cert=/etc/etcd/pki/etcd.pem --key=/etc/etcd/pki/etcd-key.pem 
+snapshot restore /root/cluster2.db --data-dir /var/lib/etcd-data-new
+
+#last command to restore 
+vi /etc/systemd/system/etcd.service  #add new value for /data-dir 
+chown -R etcd:etcd /var/lib/etcd-data-new/
+systemctl daemon-reload 
+systemctl restart etcd 
+kubectl config use-context cluster2 
+kubectl delete pods <put contoller manager, scheduler,> -n kube-system      #to restart them 
+///
+
+https://kubernetes.io/docs/tasks/administer-cluster/configure-upgrade-etcd/#backing-up-an-etcd-cluster
+
+https://github.com/etcd-io/website/blob/main/content/en/docs/v3.5/op-guide/recovery.md
+
+https://www.youtube.com/watch?v=qRPNuT080Hk
+
+///
+---------------------------------------------------------------------------------------------------------------
+kubectl create user user1             #create user in k8s 
+kubectl list users 
+kubectl create serviceaccount sa1     #create service accounts 
+kubectl get serviceaccount
+
+#TLS in general 
+ssh-keygen                                            #make public and private keys 
+cat ~/.ssh/authorized_keys
+openssl genrsa -out keyname.key 1024 
+openssl rsa -in keyname.key -pubout > keyname.pem
+openssl req -new -key keyname.key -out certname.csr -subj "/C=US/ST=CA/O=MyOrg, Inc./CN=mydomain.com"  #request a cert
