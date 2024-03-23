@@ -952,3 +952,19 @@ vi /etc/systemd/system/etcd.service  #add new value for /data-dir
 chown -R etcd:etcd /var/lib/etcd-data-new/
 systemctl daemon-reload 
 systemctl restart etcd 
+kubectl config use-context cluster2 
+kubectl delete pods <put contoller manager, scheduler,> -n kube-system      #to restart them 
+///
+
+https://kubernetes.io/docs/tasks/administer-cluster/configure-upgrade-etcd/#backing-up-an-etcd-cluster
+
+https://github.com/etcd-io/website/blob/main/content/en/docs/v3.5/op-guide/recovery.md
+
+https://www.youtube.com/watch?v=qRPNuT080Hk
+
+///
+---------------------------------------------------------------------------------------------------------------
+kubectl create user user1             #create user in k8s 
+kubectl list users 
+kubectl create serviceaccount sa1     #create service accounts 
+kubectl get serviceaccount
