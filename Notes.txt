@@ -986,3 +986,11 @@ openssl x509 -req -in ca.csr -signkey ca.key -out ca.crt                        
 #in the second command request a certificate "CN=kube-admin"
 openssl req -new -key admin.key -subj "/CN=kube-admin/O=system:masters" -out admin.csr
 openssl x509 -req -in admin.csr -CA ca.crt -CAkey ca.key -out admin.crt   
+
+#create a server side certificate
+#for kube-apiserver, create openssl.cnf file and add other names to for the kube-apiserver 
+
+openssl x509 -in /etc/kubernetes/pki/apiserver.crt -text -noout                                        #to show apiserver certificate data 
+openssl x509 -in /etc/kubernetes/pki/apiserver.crt -text                                               #to get the CN for the apiserver 
+#for environments using crio instead of docker use 
+crictl ps -a 
