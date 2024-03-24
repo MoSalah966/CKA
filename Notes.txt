@@ -994,3 +994,46 @@ openssl x509 -in /etc/kubernetes/pki/apiserver.crt -text -noout                 
 openssl x509 -in /etc/kubernetes/pki/apiserver.crt -text                                               #to get the CN for the apiserver 
 #for environments using crio instead of docker use 
 crictl ps -a 
+
+#kubernetes has a built-in certificate API that can sign certificates and store them for you for new users 
+#a user first create the key 
+openssl genrsa -out user2.key 2048
+#make a certificate request 
+openssl req -new -key user2.key -subj "/CN=user2" -out user2.csr
+#send the request to the admin 
+#the admin create certificate sign request object 
+---
+apiVersion: certificates.k8s.io/v1
+kind: CertificateSigningRequest
+metadata:
+  name: user2
+spec:
+  expirationSeconds: 600  #seconds
+  usage:
+  - digital signature
+  - key encipherment
+  - server auth 
+  request: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURSBSRVFVRVNULS0tLS0KTUlJQ1ZqQ0NBVDRDQVFBd0VURVBNQTBHQTFVRUF3d0dZVzVuWld4aE1JSUJJakFOQmdrcWhraUc5dzBCQVFFRgpBQU9DQVE4QU1JSUJDZ0tDQVFFQTByczhJTHRHdTYxakx2dHhWTTJSVlRWMDNHWlJTWWw0dWluVWo4RElaWjBOCnR2MUZtRVFSd3VoaUZsOFEzcWl0Qm0wMUFSMkNJVXBGd2ZzSjZ4MXF3ckJzVkhZbGlBNVhwRVpZM3ExcGswSDQKM3Z3aGJlK1o2MVNrVHF5SVBYUUwrTWM5T1Nsbm0xb0R2N0NtSkZNMUlMRVI3QTVGZnZKOEdFRjJ6dHBoaUlFMwpub1dtdHNZb3JuT2wzc2lHQ2ZGZzR4Zmd4eW8ybmlneFNVekl1bXNnVm9PM2ttT0x1RVF6cXpkakJ3TFJXbWlECklmMXBMWnoyalVnald4UkhCM1gyWnVVV1d1T09PZnpXM01LaE8ybHEvZi9DdS8wYk83c0x0MCt3U2ZMSU91TFcKcW90blZtRmxMMytqTy82WDNDKzBERHk5aUtwbXJjVDBnWGZLemE1dHJRSURBUUFCb0FBd0RRWUpLb1pJaHZjTgpBUUVMQlFBRGdnRUJBR05WdmVIOGR4ZzNvK21VeVRkbmFjVmQ1N24zSkExdnZEU1JWREkyQTZ1eXN3ZFp1L1BVCkkwZXpZWFV0RVNnSk1IRmQycVVNMjNuNVJsSXJ3R0xuUXFISUh5VStWWHhsdnZsRnpNOVpEWllSTmU3QlJvYXgKQVlEdUI5STZXT3FYbkFvczFqRmxNUG5NbFpqdU5kSGxpT1BjTU1oNndLaTZzZFhpVStHYTJ2RUVLY01jSVUyRgpvU2djUWdMYTk0aEpacGk3ZnNMdm1OQUxoT045UHdNMGM1dVJVejV4T0dGMUtCbWRSeEgvbUNOS2JKYjFRQm1HCkkwYitEUEdaTktXTU0xMzhIQXdoV0tkNjVoVHdYOWl4V3ZHMkh4TG1WQzg0L1BHT0tWQW9FNkpsYWFHdTlQVmkKdjlOSjVaZlZrcXdCd0hKbzZXdk9xVlA3SVFjZmg3d0drWm89Ci0tLS0tRU5EIENFUlRJRklDQVRFIFJFUVVFU1QtLS0tLQo=
+#the request here is the output of cat user2.csr | base64 
+#you can see this by kubectl get csr 
+kubectl certificate approve user2               #to approve the request 
+kubectl get csr user2 -o yaml                   #to see the certificate content 
+#to decode request format 
+echo "the request text" | base64 decode 
+#example from lab
+---
+apiVersion: certificates.k8s.io/v1
+kind: CertificateSigningRequest
+metadata:
+  name: akshay
+spec:
+  groups:
+  - system:authenticated
+  request: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURSBSRVFVRVNULS0tLS0KTUlJQ1ZqQ0NBVDRDQVFBd0VURVBNQTBHQTFVRUF3d0dZV3R6YUdGNU1JSUJJakFOQmdrcWhraUc5dzBCQVFFRgpBQU9DQVE4QU1JSUJDZ0tDQVFFQXExZlRnS2NRbjJBSVhvdm5Ia0xFdk0vZmZlS0tTOXFacEZZdVdqVTh2VkRVCjdPS0I5cHdsd0c2RTBIYmgzOFlNS21LQmdFMHNQeVlyQWF6QmZjQzNZelNkNm1aT29rcE5FdzB5YUZZVlkxbUsKV1E4YzRSRXlXQStzeDZOUnFsU0E2OFNWNzdCb256bGd1cnozUkF2aVVrQ3lhemJ1Q2kvTkZqYW85bk13NGswNApicWp3Q29UWDlEd2hlSUtTSGxpVkdCNWJ2WVMxV2VKYWdyZ0JGVCtWWFU3clcvN1NMN1k1NmtON2ZSWjFoNGg5CmFRN1NVeld5NDhiSi83eERwbW94WGVpRThsdFh1OTBlazBVcXBMWVU2a0hjcUtETWd3STdCQlVoaW9aTkhIaFkKYjN3VlFJcFlNNDJRcWczUUVkaTBLK1ZzSFJZc0tmM3Q0R3NJK09kTXRRSURBUUFCb0FBd0RRWUpLb1pJaHZjTgpBUUVMQlFBRGdnRUJBSGdDT3JtK2pUZWVJa3I3Szczbk1mVW9LaWlUU3BqN3RrbFJaQXdpaEZ2UWdyeFhtU2htClM3b2kzSEpiNEJOcTFlcDg1Q1F0eTZLTERRSWgzRFlQUFVJRnJqdFd4T0VhQkNSdUluekZHVjVTdjgwOGJid20KZ0lacmpWVUljT2hlRWl0bDNyN3kwUjI4ZkVtMXozOXJydkZLcDRkcmJDRnlvbXRXejBlQWFkdzZWeFZ5K3F4MQpQVWlnNVpVSGY0ekxFd0VNVmJLd2tWKzN6bGRGbE1WdEFqTFYwSFluWmxUVTk3eUUzKzlNNG0yYU91ZHNiOERJClB6RUFGLzVsN0R1RnordGhrekRUZFVKeGM4MlJzQVVFbnFNL0t0NVlSNzVpRk1xdDdaV2xWdjNnazhIMWM2T1oKR042eVoxTWRTK1N6M054VGo5VXJHSFpRUEZwOGd0aGlsczA9Ci0tLS0tRU5EIENFUlRJRklDQVRFIFJFUVVFU1QtLS0tLQo=
+  signerName: kubernetes.io/kube-apiserver-client
+  usages:
+  - client auth
+---
+kubectl apply -f file.yaml 
+kubectl certificate deny agent-smith
+kubectl delete csr agent-smith
