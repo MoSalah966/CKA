@@ -1037,3 +1037,73 @@ spec:
 kubectl apply -f file.yaml 
 kubectl certificate deny agent-smith
 kubectl delete csr agent-smith
+
+kube config file is in /homedir/.kube/config 
+#kube config file structure 
+---
+apiVersion: v1 
+kind: config 
+
+clusters:
+- name: my-kube-playground
+  cluster: 
+    certificate-authority: ca.crt 
+    server: https://my-kube-playground:6443
+
+contexts:
+- name: my-kube-admin@my-kube-playground
+  context:
+    cluster: my-kube-playground
+    user: my-kube-admin
+
+users:
+- name: my-kube-admin 
+  user: 
+    client-certificate: admin.crt
+    client-key: admin.key 
+---
+#another big example 
+---
+apiVersion: v1
+kind: Config
+clusters:
+- name: production
+  cluster:
+    server: https://production.example.com
+    certificate-authority: /path/to/production/ca.crt
+- name: development
+  cluster:
+    server: https://development.example.com
+    certificate-authority: /path/to/development/ca.crt
+- name: test
+  cluster:
+    server: https://test.example.com
+    certificate-authority: /path/to/test/ca.crt
+contexts:
+- name: production
+  context:
+    cluster: production
+    user: prod-user
+- name: development
+  context:
+    cluster: development
+    user: dev-user
+- name: test
+  context:
+    cluster: test
+    user: test-user
+current-context: production
+users:
+- name: prod-user
+  user:
+    client-certificate: /path/to/production/prod-user.crt
+    client-key: /path/to/production/prod-user.key
+- name: dev-user
+  user:
+    client-certificate: /path/to/development/dev-user.crt
+    client-key: /path/to/development/dev-user.key
+- name: test-user
+  user:
+    client-certificate: /path/to/test/test-user.crt
+    client-key: /path/to/test/test-user.key
+---
