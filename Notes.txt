@@ -1107,3 +1107,63 @@ users:
     client-certificate: /path/to/test/test-user.crt
     client-key: /path/to/test/test-user.key
 ---
+#you can specify a default context to start with by addding a field current-context: dev-user@google
+kubectl config view                                         #to view current file 
+kubectl config view --kubeconfig=custom-config             #specify a specific config file 
+kubectl config  use-context prod-user@production            #change the current context to the prod user at the production context 
+kubectl config -h                                           #show other commands and help
+
+#you can add additional field named namespace: finance to can transfer between namespaces 
+#when you switch to that context, you will automatically be in a specific namespace 
+#it's better to use the full path in the file like this /etc/kubernetes/pki/ca.crt
+#you can instead of using certificate authority field, you can use 
+cat ca.crt | base64         #to get the content 
+certificate-authority-data: <result of the previous command>
+cp my-kube-config ~/.kube/config                              #replacing content from custom config file to the default config file 
+
+curl http://localhost:6443 -k #show list of apis 
+curl http://localhost:6443 -k | grep "name"                   #grep group of resources 
+kubectl proxy                                                 #launches a proxy service locally on port 8001 and uses credentials and certificates from kubeconfig file to access the cluster 
+#kube proxy term is used to enable connectivity between parts and services accross different nodes in the cluster 
+
+#to create a role-based access control, you have to create a role object 
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role 
+metadata:
+  name: <rolename>
+rules: 
+- apiGroups: [""]                                         #for core group, you can leave it blank 
+  resources: ["pods"]
+  verbs: ["list", "get", "create", "update", "delete"]
+---
+kubectl create -f role.yaml 
+#to link a user with this role, create another object (role binding)
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: devuser-developer-binding
+subject:
+- kind: User 
+  name: dev-user 
+  apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: Role 
+  name: developer 
+  apiGroup: rbac.authorization.k8s.io
+---
+kubectl create -f binding.yaml 
+kubectl get roles 
+kubectl get rolebindings
+kubectl describe role developer
+kubectl describe rolebinding <role-binding-name>
+
+#if you are a user and want to see what access that you has 
+kubectl auth can-i create deployments
+kubectl auth can-i delete nodes 
+kubectl auth can-i create deployments --as dev-user 
+kubectl auth can-i create deployments --as dev-user --namespace test 
+#you can add to the role 
+resourceNames: ["pod1", "pod2"]           #to restrict access to specific resources (pods here)
+
