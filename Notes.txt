@@ -1230,3 +1230,88 @@ spec:
   imagePullSecrets:
   - name: <name in the docker-registry secret> 
 ---
+
+
+#to set security context in the pod level 
+---
+spec:
+  securityContext:
+    runAsUser: 1000                           #set the user ID 
+  containers:
+    - name: 
+      image:
+      command:
+---
+#to set security context in the container level 
+---
+spec: 
+  containers:
+    - name: 
+      image:
+      command:
+      securityContext:
+        runAsUser: 1000                           #set the user ID
+        capabilities:                             #capabilities only supported at container level 
+          add: ["MAC_ADMIN"]
+---
+#Capabilities are a set of privileges that can be granted to a process in a Linux system. In Kubernetes
+
+kubectl exec <podname> -- <linuxcommand>
+#rus as root user 
+---
+spec:
+  containers:
+  - command:
+    - sleep
+    - "4800"
+    image: ubuntu
+    name: ubuntu-sleeper
+    securityContext:
+      capabilities:
+        add: ["SYS_TIME"]
+---
+#network policy 
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: db-policy
+spec:
+  podSelector: 
+    matchlabels: db 
+  policyTypes:
+  - Ingress 
+  ingress:
+  - from: 
+    - podSelector:
+        matchLabels:
+          name: <podname>
+      namespaceSelector:
+        matchLabels:
+          name: prod 
+    - ipBlock:
+          cidr: x.x.x.x/x 
+    ports:
+    - protocol: TCP
+      port: 3306
+  ---
+#this policy to specify that the db container will not receive traffic except from the pod in match label 
+#if traffic is originatig from db pod to external destination (egress) like backup 
+policyTypes: 
+- Ingress
+- Egress
+ingress:
+  - from: 
+    - podSelector:
+        matchLabels:
+          name: <podname>
+    ports:
+    - protocol: TCP
+      port: 3306
+egress:
+- to: 
+  - ipBlock: 
+        cidr: x.x.x.x/x 
+  ports:
+  - protocol: TCP
+      port: 80
