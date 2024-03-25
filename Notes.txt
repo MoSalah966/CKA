@@ -1166,4 +1166,67 @@ kubectl auth can-i create deployments --as dev-user
 kubectl auth can-i create deployments --as dev-user --namespace test 
 #you can add to the role 
 resourceNames: ["pod1", "pod2"]           #to restrict access to specific resources (pods here)
+kubectl edit role developer -n namespaceName 
+kubectl create role <rolename> --verb=list,create,delete --resource=pods 
+k create rolebinding <bindingname>  --role=<rolename> --user=<username>
 
+#you cannot isolate a node in a particular namespace, so resources categorized as namespaced or cluster scoped 
+kubectl api-resources --namespaced    #retrieves all namespaced API resource types
+
+#create a cluster role 
+---
+apiVersion: rbac.authorization.k8s.io/v1 
+kind: ClusterRole 
+metadata:
+  name: cluster-administrator
+rules:
+- apiGroups: [""]
+  resources: ["nodes"]
+  verbs: ["list", "create"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: cluster-admin-role-binding
+subject:
+- kind: User 
+  name: cluster-admin
+  apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: ClusterRole 
+  name: cluster-administrator 
+  apiGroup: rbac.authorization.k8s.io
+---
+#if you create a cluster role for namespace, the user will has access to all namespaces
+kubectl api-resources --namespaced=false      #list all resources 
+
+#to create a service account 
+kubectl create serviceaccount <accountname>
+kubectl get serviceaccount
+kubectl describe secret <serviceaccountname>-token-xxxx #xxxx refers to the remain of the token 
+#you can use this token text for api calls for this service 
+kubectl exec -it <serviceapodname> -- ls /var/run/secrets/kubernetes.io/serviceaccount        #show files for this secret, token file contain the token text 
+#in k8s v1.24 you must run a command to create the token 
+kubectl create token <serviceaccountname>                                                     #to obtain a token from the TokenRequest API 
+#create a secret 
+---
+apiVersion: v1 
+kind: Secret 
+metadata:
+  name: mysecretname
+  annotations: 
+    kubernetes.io/service-account.name: <serviceaccountname>
+---
+
+kubectl create secret docker-registry <name> --docker-server= --docker-username= --docker-password= --docker-mail=        #built in secret for storing docker credentials
+---
+kind: Pod
+metadata:
+  name: nginx-pod
+spec:
+  containers:
+  - name: nginx 
+    image: private-registry.io/internal-app
+  imagePullSecrets:
+  - name: <name in the docker-registry secret> 
+---
