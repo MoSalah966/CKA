@@ -1363,3 +1363,93 @@ To switch back to previous namespace:
 
 kubens –
 -------------------------------------------------
+#configure volume to use a directory on the host 
+#in pod manifest file 
+spec:
+  volumes:
+  - name: data-volume 
+    hostPath:
+      path: /data 
+      type: Directory 
+  containers:
+    volumeMounts:
+    - mountPath: /opt 
+      name: data-volume 
+---
+#if the pod deleted the data still exist in the host 
+#create a persistent volume manifest 
+---
+apiVersion: v1
+kind: PersistentVolume 
+metadata:
+  name: pv-voll 
+spec:
+  accessModes: 
+    - ReadWriteOnce    #readonlymany, readwritemany > define how the volume should be mounted on the host 
+  capacity:
+    storage: 1Gi
+  hostPath:               #or awsElasticBlockStore:
+    path: /tmp/data       #       volumeID: <id>
+---                       #       fstype: ext4 
+
+#the user use persistent volume claims to use the storage of the persistent volume
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: myclaim 
+spec:
+  accessModes:
+   - ReadWriteOnce
+  resources:
+    requests:
+      storage: 500Mi 
+---
+#if you want pv still after delete pvc, put this parameter persistentVolumeReclaimPolicy: Remain #or Delete, Recycle 
+#Once you create a PVC use it in a POD definition file by specifying the PVC Claim name under persistentVolumeClaim section in the volumes section like this:
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: mypod
+spec:
+  containers:
+    - name: myfrontend
+      image: nginx
+      volumeMounts:
+      - mountPath: "/var/www/html"
+        name: mypd
+  volumes:
+    - name: mypd
+      persistentVolumeClaim:
+        claimName: myclaim
+---
+#if you want to create a dynamic provisioning, add a fourth file 
+---
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: google-storage 
+provisioner: kubernetes.io/gce-pd 
+---
+#here you will no longer need to pv manifest, edit pvc definition
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: myclaim 
+spec:
+  accessModes:
+   - ReadWriteOnce
+  storageClassName: google-storage      #name from the dynamic provisioner 
+  resources:
+    requests:
+      storage: 500Mi 
+---
+#you can specify parameters under provisioner 
+---
+provisioner: kubernetes.io/gce-pd 
+parameters:
+  type: pd-standard [pd-standard] [pd-ssd]
+  replication-type: none [none | regional-pd]
+---
