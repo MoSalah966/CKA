@@ -1465,8 +1465,8 @@ parameters:
 -etcd                > 2379
 -if two worker nodes etcd > 2380
 
-ip link 
-ip addr 
+ip link                               #can get bridge created 
+ip addr                               #get ip and mac 
 ip route 
 ip addr add x.x.x.x/x dev eth0 
 ip route add x.x.x.x/x via x.x.x.x
@@ -1474,4 +1474,5 @@ cat /proc/sys/net/ipv4/ip_forward
 arp 
 route 
 netstat -plnt 
-
+ip route show default             #show default gateway 
+netstat -anp | grep etcd
