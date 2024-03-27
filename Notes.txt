@@ -1363,6 +1363,7 @@ To switch back to previous namespace:
 
 kubens –
 -------------------------------------------------
+-------------------------------------------------
 #configure volume to use a directory on the host 
 #in pod manifest file 
 spec:
@@ -1453,3 +1454,24 @@ parameters:
   type: pd-standard [pd-standard] [pd-ssd]
   replication-type: none [none | regional-pd]
 ---
+-----------------------------------------------
+-----------------------------------------------
+#ports of nodes components 
+- kube-api           > 6443
+- kubelet            > 10250
+- shceduler          > 10259
+- controller manager > 10257  
+-worker node services> 30000 - 32767 
+-etcd                > 2379
+-if two worker nodes etcd > 2380
+
+ip link 
+ip addr 
+ip route 
+ip addr add x.x.x.x/x dev eth0 
+ip route add x.x.x.x/x via x.x.x.x
+cat /proc/sys/net/ipv4/ip_forward 
+arp 
+route 
+netstat -plnt 
+
