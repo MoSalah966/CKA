@@ -1476,3 +1476,8 @@ route
 netstat -plnt 
 ip route show default             #show default gateway 
 netstat -anp | grep etcd
+
+ps -aux | grep kubelet 
+ls /opt/cni/bin 
+ls /etc/cni/net.d 
+kubectl apply -f https://github.com/weaveworks/weave/releases/download/v2.8.1/weave-daemonset-k8s.yaml  #installation link for CNI weave 
