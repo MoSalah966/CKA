@@ -1490,3 +1490,11 @@ ip addr show weave
 
 #services are a cluster wide object so it's not assigned to specific pods or pod 
 iptables -L -t nat | grep <servicename> #show traffic that forwarding because of the network service created 
+cat /var/log/kube-proxy.log 
+cat /etc/kubernetes/manifests/kube-apiserver.yaml   | grep cluster-ip-range
+
+cat /etc/coredns/corefile             #core dns config file 
+#the service created from the CoreDNS is called kube-dns by default 
+#its IP address configured as a nameserver of the pods 
+#full FKDN(fully qualified domain name) will be like this host <podIP>.<namespaceName>.pod.cluster.local 
+kubectl get svc 
