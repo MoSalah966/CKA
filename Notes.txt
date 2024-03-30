@@ -1479,5 +1479,14 @@ netstat -anp | grep etcd
 
 ps -aux | grep kubelet 
 ls /opt/cni/bin 
-ls /etc/cni/net.d 
+ls /etc/cni/net.d                 #show CNI plugin configured to be used on this kubernetes cluster
 kubectl apply -f https://github.com/weaveworks/weave/releases/download/v2.8.1/weave-daemonset-k8s.yaml  #installation link for CNI weave 
+kubectl get pods -n kube-system                     #to get weave pods 
+kubectl logs weave-net-xxxxx weave -n kube-system   #to get logs
+kubectl get pods -A | grep weave
+kubectl apply -f https://reweave.azurewebsites.net/k8s/v1.28/net.yaml
+cat /etc/cni/net.d/net-script.conf    #has section called ipam in which we can specify the type of plugin used the subnet and route to be used 
+ip addr show weave 
+
+#services are a cluster wide object so it's not assigned to specific pods or pod 
+iptables -L -t nat | grep <servicename> #show traffic that forwarding because of the network service created 
