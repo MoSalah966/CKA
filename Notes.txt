@@ -1565,3 +1565,125 @@ apiVersion: v1
 metadata:
   name: nginx-configuration
 ---
+
+#create a service account for the ingress controller for the correct roles and role bindings to set permissions to it 
+---
+apiVersion: v1 
+kind: ServiceAccount 
+metadata:
+  name: nginx-ingress-serviceaccount 
+---
+#so we create for ingress > deployment, service to expose it, configmap to feed nginx configuration data (in this example), auth with service acc 
+#with the right permissions to access all of these objects 
+#ingress resources are a set of rules and configurations applied on the ingress 
+kubectl get ingress 
+#we use rules when we want to route traffic based on different conditions 
+---
+spec:
+  rules:
+  - http:
+      paths:                  #paths is an array of multiple items, one path for each URL 
+      - path: /wear 
+        backend:
+          serviceName: wear-service 
+          servicePort: 80
+
+      - path: /watch 
+---
+kubectl describe ingress <ingresscontrollerName>
+#if you user two different subdomains, you have to repeat http array with lists under it not only paths
+---
+spec:
+  rules:
+  - host: wear.onlinestore.com 
+    http:
+      paths:
+      - backend:
+          serviceName: wear-service 
+          servicePort: 80 
+  - host: watch.onlinestore.com 
+    http:
+      paths:
+      - backend:
+          serviceName: watch-service                #legacy check the docs 
+          servicePort: 80 
+---
+#the newly update: A minimal Ingress resource example:
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: minimal-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  ingressClassName: nginx-example
+  rules:
+  - http:
+      paths:
+      - path: /testpath
+        pathType: Prefix
+        backend:
+          service:
+            name: test
+            port:
+              number: 80
+---
+#route requests based on the Host header.
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: name-virtual-host-ingress
+spec:
+  rules:
+  - host: foo.bar.com
+    http:
+      paths:
+      - pathType: Prefix
+        path: "/"
+        backend:
+          service:
+            name: service1
+            port:
+              number: 80
+  - host: bar.foo.com
+    http:
+      paths:
+      - pathType: Prefix
+        path: "/"
+        backend:
+          service:
+            name: service2
+            port:
+              number: 80
+---
+kubectl create ingress <ingress-name> --rule="host/path=service:port"
+#example
+kubectl create ingress ingress-test --rule="wear.my-online-store.com/wear*=wear-service:80"
+
+#reWrite function for nginx ingress controller 
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: test-ingress
+  namespace: critical-space
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  rules:
+  - http:
+      paths:
+      - path: /pay
+        backend:
+          serviceName: pay-service
+          servicePort: 8282
+---
+#to elect one of two master nodes to be active one you have to add this option 
+kube-controller-manager --leader-elect true [other options]
+
+export ETCDCTL_API=3
+etcdctl put name <name>                #key value here is name > <name>
+etcdctl get name  
+etcdctl get / --prefix --keys-only     #to get only keys 
