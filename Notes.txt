@@ -1735,3 +1735,6 @@ kubectl logs kube-apiserver-master -n kube-system
 journalctl -u kube-apiserver 
 kubectl scale deploy app --replicas=2       #scale deployment to 2 pods 
 /etc/kubernetes/manifests/...               #to get manifests files 
+journalctl -u kubelet -f
+/var/lib/kubelet/config.yaml
+/etc/kubernetes/kubelet.conf
