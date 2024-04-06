@@ -1726,3 +1726,12 @@ kubectl apply -f https://github.com/flannel-io/flannel/releases/latest/download/
 
 
 kubectl logs <podname> --previous                 #to get logs for previous pods 
+service kubec-apiserver status 
+service kube-controller status 
+service kube-scheduler status 
+service kubelet status 
+service kube-proxy status 
+kubectl logs kube-apiserver-master -n kube-system 
+journalctl -u kube-apiserver 
+kubectl scale deploy app --replicas=2       #scale deployment to 2 pods 
+/etc/kubernetes/manifests/...               #to get manifests files 
