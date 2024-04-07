@@ -1738,3 +1738,57 @@ kubectl scale deploy app --replicas=2       #scale deployment to 2 pods
 journalctl -u kubelet -f
 /var/lib/kubelet/config.yaml
 /etc/kubernetes/kubelet.conf
+--------------------------------
+Network troubleshooting 
+--------------------------------
+1. Weave Net:
+
+To install,
+
+kubectl apply -f
+https://github.com/weaveworks/weave/releases/download/v2.8.1/weave-daemonset-k8s.yaml
+
+You can find details about the network plugins in the following documentation :
+
+https://kubernetes.io/docs/concepts/cluster-administration/addons/#networking-and-network-policy
+
+///
+Troubleshooting issues related to coreDNS
+1. If you find CoreDNS pods in pending state first check network plugin is installed.
+
+2. coredns pods have CrashLoopBackOff or Error state
+
+If you have nodes that are running SELinux with an older version of Docker you might experience a scenario where the coredns pods are not starting. To solve that you can try one of the following options:
+
+a)Upgrade to a newer version of Docker.
+
+b)Disable SELinux.
+
+c)Modify the coredns deployment to set allowPrivilegeEscalation to true:
+
+kubectl -n kube-system get deployment coredns -o yaml | \
+  sed 's/allowPrivilegeEscalation: false/allowPrivilegeEscalation: true/g' | \
+  kubectl apply -f -
+///
+Troubleshooting issues related to kube-proxy
+1. Check kube-proxy pod in the kube-system namespace is running.
+
+2. Check kube-proxy logs.
+
+3. Check configmap is correctly defined and the config file for running kube-proxy binary is correct.
+
+4. kube-config is defined in the config map.
+
+5. check kube-proxy is running inside the container
+
+# netstat -plan | grep kube-proxy
+///
+Debug Service issues:
+
+https://kubernetes.io/docs/tasks/debug-application-cluster/debug-service/
+
+DNS Troubleshooting:
+
+https://kubernetes.io/docs/tasks/administer-cluster/dns-debugging-resolution/
+///
+
