@@ -1792,3 +1792,14 @@ DNS Troubleshooting:
 https://kubernetes.io/docs/tasks/administer-cluster/dns-debugging-resolution/
 ///
 
+cat input.json | jpath $.metadata.name
+kubectl get pods -o=jsonpath='{ .items[0].spec.containers[0].image }'
+
+for each node                             ==  '{range .items[*]}
+print node name \t print cpu count \n     ==  {.metadata.name} {"\t"} {.status.capacity.cpu} {"\n"}
+end for                                   ==  {end}'
+
+kubectl get nodes -o=custom-columns=NODE:.metadata.name ,CPU:.status.capacity.cpu 
+kubectl get nodes --sort-by=.metadata.name
+
+kubectl get pv --sort-by=.spec.capacity.storage -o=custom-columns=NAME:.metadata.name,CAPACITY:.spec.capacity.storage > /opt/outputs/pv-and-capacity-sorted.txt
