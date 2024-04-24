@@ -1691,3 +1691,119 @@ export ETCDCTL_API=3
 etcdctl put name <name>                #key value here is name > <name>
 etcdctl get name  
 etcdctl get / --prefix --keys-only     #to get only keys 
+
+initiation a node using options 
+
+kubeadm init --apiserver-cert-extra-sans=controlplane --apiserver-advertise-address $IP_ADDR --pod-network-cidr=10.244.0.0/16
+root@controlplane:~> mkdir -p $HOME/.kube
+root@controlplane:~> sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+root@controlplane:~> sudo chown $(id -u):$(id -g) $HOME/.kube/config
+
+kubeadm token create --print-join-command
+#take the result and put it in nodeo01 
+
+///
+On the controlplane node, run the following set of commands to deploy the network plugin:
+Download the original YAML file and save it as kube-flannel.yml:
+curl -LO https://raw.githubusercontent.com/flannel-io/flannel/v0.20.2/Documentation/kube-flannel.yml
+Open the kube-flannel.yml file using a text editor.
+
+Locate the args section within the kube-flannel container definition. It should look like this:
+
+  args:
+  - --ip-masq
+  - --kube-subnet-mgr
+Add the additional argument - --iface=eth0 to the existing list of arguments.
+
+Now apply the modified manifest kube-flannel.yml file using kubectl:
+
+kubectl apply -f kube-flannel.yml
+After applying the manifest, the STATUS of both the nodes should become Ready
+
+controlplane ~ ➜  kubectl get nodes
+NAME           STATUS   ROLES           AGE   VERSION
+controlplane   Ready    control-plane   15m   v1.29.0
+node01         Ready    <none>          15
+///
+
+kubectl apply -f https://github.com/flannel-io/flannel/releases/latest/download/kube-flannel.yml
+
+
+kubectl logs <podname> --previous                 #to get logs for previous pods 
+service kubec-apiserver status 
+service kube-controller status 
+service kube-scheduler status 
+service kubelet status 
+service kube-proxy status 
+kubectl logs kube-apiserver-master -n kube-system 
+journalctl -u kube-apiserver 
+kubectl scale deploy app --replicas=2       #scale deployment to 2 pods 
+/etc/kubernetes/manifests/...               #to get manifests files 
+journalctl -u kubelet -f
+/var/lib/kubelet/config.yaml
+/etc/kubernetes/kubelet.conf
+--------------------------------
+Network troubleshooting 
+--------------------------------
+1. Weave Net:
+
+To install,
+
+kubectl apply -f
+https://github.com/weaveworks/weave/releases/download/v2.8.1/weave-daemonset-k8s.yaml
+
+You can find details about the network plugins in the following documentation :
+
+https://kubernetes.io/docs/concepts/cluster-administration/addons/#networking-and-network-policy
+
+///
+Troubleshooting issues related to coreDNS
+1. If you find CoreDNS pods in pending state first check network plugin is installed.
+
+2. coredns pods have CrashLoopBackOff or Error state
+
+If you have nodes that are running SELinux with an older version of Docker you might experience a scenario where the coredns pods are not starting. To solve that you can try one of the following options:
+
+a)Upgrade to a newer version of Docker.
+
+b)Disable SELinux.
+
+c)Modify the coredns deployment to set allowPrivilegeEscalation to true:
+
+kubectl -n kube-system get deployment coredns -o yaml | \
+  sed 's/allowPrivilegeEscalation: false/allowPrivilegeEscalation: true/g' | \
+  kubectl apply -f -
+///
+Troubleshooting issues related to kube-proxy
+1. Check kube-proxy pod in the kube-system namespace is running.
+
+2. Check kube-proxy logs.
+
+3. Check configmap is correctly defined and the config file for running kube-proxy binary is correct.
+
+4. kube-config is defined in the config map.
+
+5. check kube-proxy is running inside the container
+
+# netstat -plan | grep kube-proxy
+///
+Debug Service issues:
+
+https://kubernetes.io/docs/tasks/debug-application-cluster/debug-service/
+
+DNS Troubleshooting:
+
+https://kubernetes.io/docs/tasks/administer-cluster/dns-debugging-resolution/
+///
+
+cat input.json | jpath $.metadata.name
+kubectl get pods -o=jsonpath='{ .items[0].spec.containers[0].image }'
+
+for each node                             ==  '{range .items[*]}
+print node name \t print cpu count \n     ==  {.metadata.name} {"\t"} {.status.capacity.cpu} {"\n"}
+end for                                   ==  {end}'
+
+kubectl get nodes -o=custom-columns=NODE:.metadata.name ,CPU:.status.capacity.cpu 
+kubectl get nodes --sort-by=.metadata.name
+
+kubectl get pv --sort-by=.spec.capacity.storage -o=custom-columns=NAME:.metadata.name,CAPACITY:.spec.capacity.storage > /opt/outputs/pv-and-capacity-sorted.txt
