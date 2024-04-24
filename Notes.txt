@@ -814,6 +814,10 @@ kubectl drain node01 --ignore-daemonsets
 -------------------------
 upgrade the cluster
 _________________________
+#Use any text editor you prefer to open the file that defines the Kubernetes apt repository.
+vim /etc/apt/sources.list.d/kubernetes.list
+#Update the version in the URL to the next available minor release, i.e v1.29.
+deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.29/deb/ /
 kubeadm upgrade plan        #will give you info about cluster current version and kubeadm version and latest stable version,list all components version
 kubeadm upgrade apply       #if you use kubeadm and want to upgrade 
 #after upgrade every node, you have to upgrade manually the kubelet on every node
@@ -843,7 +847,7 @@ apt update
 apt-cache madison kubeadm
 apt-get install kubeadm=1.29.0-1.1
 kubeadm upgrade plan v1.29.0
-apt-get install kubelet=1.29.0-1.1
+kubeadm upgrade apply v1.29.0
 apt-get install kubelet=1.29.0-1.1
 systemctl daemon-reload
 systemctl restart kubelet
