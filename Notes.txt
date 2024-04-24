@@ -248,7 +248,7 @@ kubectl get pods --selector env=dev --no-headers | wc -l            #get number 
 ---Taints and Tolerations---
 kubectl taint nodes <nodename> key=value:taint-effect               #to taint a node
 #there are three main effects: NoSchedule PreferNoSchedule NoExecute
-#https://www.hackertouch.com/what-is-the-difference-between-noexecute-noschedule-prefernoschedule.html  #to explain difference
+#https://trstringer.com/understanding-prefernoschedule/  #to explain difference
 #to add toleration to a pod
 ---
 apiVersion: v1
