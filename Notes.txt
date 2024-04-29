@@ -317,7 +317,7 @@ spec:
 #another label "Exists" check if the label exists on the nodes 
 -------------------------------------
 ---Node Affinity Types---
-availabel:                                                #any change in node affinity after running will not affect the pod
+available:                                                #any change in node affinity after running will not affect the pod
 requiredDuringSchedulingIgnoredDuringExecution            #if the matching pod does not exist, the pod will not be scheduled 
 preferredDuringSchedulingIgnoredDuringExecution           #if the matching pod does not exist, the scheduler will simply ignore node affinity rules
 
@@ -1192,7 +1192,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   name: cluster-admin-role-binding
-subject:
+subjects:
 - kind: User 
   name: cluster-admin
   apiGroup: rbac.authorization.k8s.io
