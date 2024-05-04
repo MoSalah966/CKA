@@ -1389,6 +1389,7 @@ kind: PersistentVolume
 metadata:
   name: pv-voll 
 spec:
+  persistentVolumeReclaimPolicy: Retain
   accessModes: 
     - ReadWriteOnce    #readonlymany, readwritemany > define how the volume should be mounted on the host 
   capacity:
@@ -1700,8 +1701,8 @@ root@controlplane:~> sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
 root@controlplane:~> sudo chown $(id -u):$(id -g) $HOME/.kube/config
 
 kubeadm token create --print-join-command
-#take the result and put it in nodeo01 
-
+#take the result and put it in nodeo01 and click enter 
+kubeadm join 192.19.95.6 --token 192.19.95.6 --discovery-token-ca-cert-hash sha256:09b4a0bb53ac707e6de126bb4eb21d99b1d98d3e18586755cdea281a3bfc5f8e #to join node01 
 ///
 On the controlplane node, run the following set of commands to deploy the network plugin:
 Download the original YAML file and save it as kube-flannel.yml:
